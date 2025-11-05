@@ -1,0 +1,78 @@
+// 主题色
+@topic-green: #2ecc71;
+@topic-red: #e64340;
+@topic-text: #313131;
+
+// 主体背景色
+@topic-bgc: #f8f8f8;
+
+// 分割线主题色
+@topic-split: #e9e9e9;
+
+// 标准字体大小
+@base-font-size: 24rpx;
+
+// 标准左右侧间隙
+@base-gap: 30rpx;
+
+// 标准页面底部间隙
+@base-bottom-gap: 68rpx;
+
+// 测试用线
+@test-line-width: 4rpx;
+
+// 页面主体使用弹性盒子
+.flex-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// 单行文本设置超出后显示省略号
+.text-ellipsis {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+// 多行文本设置超出后显示省略号
+.text-ellipsis-two {
+  text-overflow: ellipsis;
+  display: -webkit-box; // 将对象作为弹性伸缩盒子模型显示
+  -webkit-line-clamp: 2; // 将对象作为弹性伸缩盒子模型显示。
+  -webkit-box-orient: vertical; // 从上到下垂直排列子元素（设置伸缩盒子的子元素排列方式）
+  overflow: hidden;
+}
+
+// 无数据
+@no-data-size: 320rpx;
+.no-data {
+  width: @no-data-size;
+  height: @no-data-size;
+  margin: 0 auto;
+  margin-top: @no-data-size;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// tab样式
+.nav-tab-box {
+  margin: 0 auto;
+}
+.nav-tab-box-two {
+  width: 75%;
+}
+.nav-tab-box-four {
+  width: 100%;
+}
+.nav-tab-box-three {
+  width: 100%;
+}
+
+// 公共布局样式
+@import url('@/static/style/layout/top-status.less');
+@import url('@/static/style/layout/top-nav.less');
+@import url('@/static/style/animation/fade-show.less');

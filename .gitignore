@@ -1,0 +1,24 @@
+######################################################################
+# Build Tools
+
+/unpackage/dist/dev
+/unpackage/dist/build/.automator
+/unpackage/dist/build/mp-weixin
+/node_modules/*
+
+######################################################################
+# Development Tools
+
+/.idea/*
+/.vscode/*
+/.hbuilderx/*
+
+package-lock.json
+yarn.lock
+
+.hbuilderx
+.vscode
+.history
+
+neverUploadToGithub.js
+/node_modules

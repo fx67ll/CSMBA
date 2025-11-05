@@ -1,0 +1,135 @@
+{
+  "pages": [
+    {
+      "path": "pages/mahjong/room/index",
+      "style": {
+        "navigationBarTitleText": "主页"
+      }
+    },
+    {
+      "path": "pages/fx67ll",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    // #ifdef MP-WEIXIN
+    {
+      "path": "pages/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    // #endif
+    // #ifdef H5
+    {
+      "path": "pages/login",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    // #endif
+    {
+      "path": "pages/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/mine/avatar/index",
+      "style": {
+        "navigationBarTitleText": "修改头像"
+      }
+    },
+    {
+      "path": "pages/mine/info/index",
+      "style": {
+        "navigationBarTitleText": "个人信息"
+      }
+    },
+    {
+      "path": "pages/mine/info/edit",
+      "style": {
+        "navigationBarTitleText": "编辑资料"
+      }
+    },
+    {
+      "path": "pages/mine/pwd/index",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+    {
+      "path": "pages/mine/setting/index",
+      "style": {
+        "navigationBarTitleText": "应用设置"
+      }
+    },
+    {
+      "path": "pages/mine/about/index",
+      "style": {
+        "navigationBarTitleText": "关于我们"
+      }
+    },
+    {
+      "path": "pages/common/webview/index",
+      "style": {
+        "navigationBarTitleText": "浏览网页"
+      }
+    },
+    {
+      "path": "pages/common/textview/index",
+      "style": {
+        "navigationBarTitleText": "浏览文本"
+      }
+    },
+    {
+      "path": "pages/mahjong/reservation/index",
+      "style": {
+        "navigationBarTitleText": "麻将时间预约"
+      }
+    },
+    {
+      "path": "pages/mahjong/log/index",
+      "style": {
+        "navigationBarTitleText": "我的预约历史"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#707070",
+    "selectedColor": "#000000",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/mahjong/room/index",
+        "iconPath": "static/images/tabbar/home.png",
+        "selectedIconPath": "static/images/fx67ll-app.jpg",
+        "text": "主页"
+      },
+      {
+        "pagePath": "pages/mahjong/reservation/index",
+        "iconPath": "static/images/tabbar/home.png",
+        "selectedIconPath": "static/images/fx67ll-app.jpg",
+        "text": "预约"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "iconPath": "static/images/tabbar/mine.png",
+        "selectedIconPath": "static/images/fx67ll-app.jpg",
+        "text": "我的"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "fx67ll",
+    "navigationBarBackgroundColor": "#FFFFFF"
+  }
+}

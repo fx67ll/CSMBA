@@ -1,0 +1,144 @@
+@nav-top: 88rpx;  // 自定义导航高度
+@search-top: 80rpx;  // 搜索栏高度
+@tab-top: 100rpx;  // tab栏高度
+
+// 自定义公共导航栏
+.top-nav {
+	width: 100%;
+	height: @nav-top;
+	position: fixed;
+	top: 0;
+	background-color: #ffffff;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	z-index: 10;
+	.top-nav-back {
+		width: 25%;
+		.top-nav-back-icon{
+			padding: 15rpx 15rpx 15rpx 30rpx;
+			// border: @test-line-width solid @topic-green;
+		}
+	}
+	.top-nav-title {
+		width: 45%;
+		text-align: center;
+		font-size: 34rpx;
+		color: #000000;
+	}
+	.top-nav-btn {
+		width: calc(25% - 30rpx);
+		text-align: right;
+		margin-right: 30rpx;
+		font-size: 28rpx;
+		color: #838383;
+		position: relative;
+		top: 3rpx;
+	}
+}
+
+// 自定义导航栏占位
+.top-nav-fake{
+	width: 100%;
+	height: @nav-top;
+}
+
+// 搜索栏
+.top-nav-search{
+	width: 100%;
+	height: @search-top;
+	background-color: #ffffff;
+	position: fixed;
+	top: @nav-top;
+	z-index: 10;
+	.nav-search-box {
+		width: calc(100% - @base-gap * 2);
+		height: 72rpx;
+		background-color: #F8F8F8;
+		margin: calc(@search-top - 72rpx) auto 0 auto;
+		border-radius: 50rpx;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		.nav-search-icon {
+			position: relative;
+			left: 26rpx;
+			top: -2rpx;
+		}
+		.nav-search-input {
+			width: calc(100% - 80rpx);
+			height: 100%;
+			font-size: 24rpx;
+		}
+		.nav-input-placeholder {
+			font-size: 28rpx;
+			color: #c8c8c8;
+		}
+	}
+}
+
+
+// 为invoice_index做适配的搜索栏
+@invoice-filter-width: 140rpx;
+.nav-search-box-invoice{
+	width: calc(100% - @base-gap * 2);
+	margin: 0 auto;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	.nav-search-box{
+		width: calc(100% - @invoice-filter-width);
+	}
+	.nav-search-filter{
+		width: @invoice-filter-width;
+		font-size: 28rpx;
+		color: #313131;
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		position: relative;
+		top: 10rpx;
+		.nav-search-filter-text{
+			margin-right: 8rpx;
+		}
+		.nav-search-filter-icon{
+			margin-right: 20rpx;
+			position: relative;
+			top: 1rpx;
+		}
+	}
+}
+
+// tab栏
+.top-nav-tab{
+	width: 100%;
+	height: @tab-top;
+	background-color: #ffffff;
+	position: fixed;
+	top: calc(@nav-top + @search-top);
+	z-index: 10;
+	.nav-tab-box{
+		margin: 0 auto;
+	}
+	.nav-tab-box-two{
+		width: 75%;
+	}
+	.nav-tab-box-four{
+		width: 100%;
+	}
+	.nav-tab-box-three{
+		width: 100%;
+	}
+}
+
+// 自定义导航栏加搜索栏加tab栏占位
+.top-nav-fake-high{
+	width: 100%;
+	height: calc(@nav-top + @search-top + @tab-top);
+}
+
+// 自定义导航栏加搜索栏
+.top-nav-fake-middle{
+	width: 100%;
+	height: calc(@nav-top + @search-top);
+}

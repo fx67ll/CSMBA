@@ -1,0 +1,80 @@
+// 缓慢显示动画
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  75% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+// @fade-animate-time: 0.8s;
+@fade-animate-time: 0.4s;
+.fade-show {
+  -webkit-animation: fadeInOut @fade-animate-time forwards; /* Chrome, Safari, newer versions of Opera */
+  -moz-animation: fadeInOut @fade-animate-time forwards; /* Firefox */
+  -o-animation: fadeInOut @fade-animate-time forwards; /* Older versions of Opera */
+  animation: fadeInOut @fade-animate-time forwards;
+  opacity: 1;
+}
+
+// 缓慢显示动画，二次展示
+@keyframes fadeInOutSecond {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+// @fade-animate-time-second: 1.3s;
+@fade-animate-time-second: 0.6s;
+.fade-show-second {
+  -webkit-animation: fadeInOutSecond @fade-animate-time-second forwards; /* Chrome, Safari, newer versions of Opera */
+  -moz-animation: fadeInOutSecond @fade-animate-time-second forwards; /* Firefox */
+  -o-animation: fadeInOutSecond @fade-animate-time-second forwards; /* Older versions of Opera */
+  animation: fadeInOutSecond @fade-animate-time-second forwards;
+  opacity: 1;
+}
+
+// 缓慢显示动画，三次展示
+@keyframes fadeInOutThird {
+  0% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+// @fade-animate-time-third: 1.7s;
+@fade-animate-time-third: 0.8s;
+.fade-show-third {
+  -webkit-animation: fadeInOutThird @fade-animate-time-third forwards; /* Chrome, Safari, newer versions of Opera */
+  -moz-animation: fadeInOutThird @fade-animate-time-third forwards; /* Firefox */
+  -o-animation: fadeInOutThird @fade-animate-time-third forwards; /* Older versions of Opera */
+  animation: fadeInOutThird @fade-animate-time-third forwards;
+  opacity: 1;
+}

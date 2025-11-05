@@ -1,0 +1,26 @@
+{
+  "name": "csmba-app",
+  "version": "0.1.1",
+  "description": "麻将室预约登记 App",
+  "main": "main.js",
+  "dependencies": {
+    "crypto-js": "^4.1.1",
+    "moment": "^2.29.4",
+    "quill": "^1.3.7",
+    "underscore": "^1.13.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fx67ll/CSMBA.git"
+  },
+  "author": "fx67ll",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fx67ll/CSMBA/issues"
+  },
+  "homepage": "https://github.com/fx67ll/CSMBA#README"
+}
