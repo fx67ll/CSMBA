@@ -139,6 +139,10 @@ page {
           color: #999 !important;
           // border: 1px solid #EEEEEE;
         }
+        &.my-appoint {
+          background: rgba(46, 204, 113, 0.1) !important;
+          color: #2ecc71 !important;
+        }
         &.active {
           // border: 1px solid #FB5D6B;
           border: 1px solid #2ecc71;

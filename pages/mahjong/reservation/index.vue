@@ -1,8 +1,9 @@
 <template>
   <view class="fx67ll-reservation-box">
-    <prettyTimes :beginTime="appointConfig.allowBeginTime" :endTime="appointConfig.allowEndTime"
+    <prettyTimes ref="prettyTimes" :beginTime="appointConfig.allowBeginTime" :endTime="appointConfig.allowEndTime"
       :timeInterval="appointConfig.allowTimeInterval" :appointTime="appointConfig.appointTime" :isSection="true"
-      :disableTimeSlot="appointConfig.disableTimeSlot" @change="handleTimeChange" @date-change="handleDateChange">
+      :disableTimeSlot="appointConfig.disableTimeSlot" :myAppointTimeSlot="appointConfig.myAppointTimeSlot"
+      @change="handleTimeChange" @date-change="handleDateChange" @ready="handleComponentReady">
     </prettyTimes>
 
     <!-- 新增：底部提交按钮容器 -->
@@ -32,11 +33,12 @@ export default {
         allowTimeInterval: 1,
         appointTime: ["2022-02-10 15:30:00"],
         disableTimeSlot: [],
+        myAppointTimeSlot: []
       },
       logList: [],
       queryParams: {
         pageNum: 1,
-        pageSize: 999999999,
+        pageSize: 999,
         mahjongRoomId: 1,
         reservationDate: '',
         reservationStatus: '',
@@ -47,37 +49,63 @@ export default {
         reservationStartTime: null,
         reservationEndTime: null,
         reservationStatus: null,
-      }
+      },
+      nowDateInfo: {}
     };
   },
+  onShow() {
+    // 重新渲染当前日期的预约
+    console.log('nowDateInfo', this.nowDateInfo);
+    this.handleDateChange(this.nowDateInfo);
+  },
   onLoad() {
-    // 1. 使用moment获取当日日期，格式化为 "YYYYMMDD"（与后端接收格式匹配，若需"YYYY-MM-DD"可调整）
-    const today = moment().format('YYYYMMDD');
-    // 2. 给查询参数的reservationDate赋值当日日期
-    this.queryParams.reservationDate = today;
-    // 3. 重置页码为1（避免页面切换后页码残留导致查询异常）
+    // 1. 初始化当日日期（与组件返回的 selectedDate 格式一致：YYYY-MM-DD）
+    const today = moment().format('YYYY-MM-DD');
+    const todayWeek = moment().format('dddd'); // 获取星期（如 "Monday"，可按需转换为 "周一"）
+    // 2. 初始化 nowDateInfo（匹配 handleDateChange 所需的参数结构）
+    this.nowDateInfo = {
+      selectedDate: today,
+      selectedWeek: todayWeek, // 转换为中文星期（见步骤3的工具方法）
+      activeIndex: 0 // 当日在日期列表中的索引（默认第1个）
+    };
+    // 3. 初始化查询参数（使用当日日期）
+    this.queryParams.reservationDate = today.replace(/-/g, ""); // 转为后端需要的 YYYYMMDD 格式
     this.queryParams.pageNum = 1;
-    this.queryParams.pageSize = 999999999;
-    // 4. 调用列表查询，此时会携带当日日期参数
-    this.queryLogList();
-    // 5. 刷新z-paging-mini组件，确保列表重新渲染（避免缓存旧数据）
-    if (this.$refs.paging) {
-      this.$refs.paging.reload();
-    }
+    this.queryParams.pageSize = 999;
+    // 4. 首次加载数据
+    this.queryLogList(true);
+    this.queryLogList(false);
   },
   methods: {
-    // 查询预约订单记录列表
-    queryLogList() {
+    // 子组件渲染完成后，同步初始日期到父组件 nowDateInfo
+    handleComponentReady() {
+      // 子组件的 dateArr 是生成的日期列表，取第一个（默认选中的当日）
+      const initDate = this?.$refs?.prettyTimes?.dateArr?.[0] || null;
+      if (initDate) {
+        this.nowDateInfo = {
+          selectedDate: initDate.date,
+          selectedWeek: initDate.week,
+          activeIndex: 0
+        };
+      }
+    },
+    clearLogList() {
+      this.logList = [];
+      this.appointConfig.disableTimeSlot = [];
+      this.appointConfig.myAppointTimeSlot = [];
+    },
+    // 查询预约历史记录
+    queryLogList(isNeedAll = true) {
       const self = this;
       this.queryParams.pageNum = 1;
       this.queryParams.pageSize = 999;
+      this.queryParams.isNeedAll = isNeedAll;
       listMahjongReservationLog(self.queryParams)
         .then((res) => {
           if (res?.code === 200) {
             if (res?.rows && res?.rows?.length > 0) {
-              self.log = res.rows;
-
-              this.appointConfig.disableTimeSlot = res?.rows
+              self.logList = res?.rows || [];
+              const targetTimeSlot = (res?.rows || [])
                 // 第一步：过滤出 reservationStatus 等于 '0' 的数据
                 ?.filter(item => item.reservationStatus === '0')
                 // 第二步：对过滤后的数据处理时间，生成禁用时间段
@@ -92,26 +120,31 @@ export default {
                   return [startTime, endTime.format('YYYY-MM-DD HH:mm:ss')];
                 }) || [];
 
-              console.log(this.appointConfig.disableTimeSlot);
+              // 根据查询类型更新对应配置
+              if (isNeedAll) {
+                this.appointConfig.disableTimeSlot = targetTimeSlot;
+              } else {
+                this.appointConfig.myAppointTimeSlot = targetTimeSlot;
+              }
             } else {
-              self.logList = [];
+              self.clearLogList();
             }
           } else {
+            self.clearLogList();
             uni.showToast({
               title: "查询预约订单记录失败！",
               icon: "none",
               duration: 1998,
             });
-            self.$refs.paging.complete(false);
           }
         })
         .catch((res) => {
-          self.logList = [];
+          self.clearLogList();
         });
     },
+    // 时间范围点击监听 
     handleTimeChange(timeArr) {
       const self = this;
-      console.log('当前选中的时间段：', timeArr, this.formParams)
 
       let startTime = timeArr?.beginTime || '';
       let endTime = timeArr?.endTime || '';
@@ -119,7 +152,6 @@ export default {
       // 如果开始时间和结束时间相同，则给结束时间加1小时
       if (startTime && endTime && startTime === endTime) {
         endTime = moment(startTime).add(1, 'hours').format('YYYY-MM-DD HH:mm:ss');
-        console.log(`开始时间与结束时间相同，自动将结束时间调整为：${endTime}`);
       }
 
       this.formParams = {
@@ -128,16 +160,19 @@ export default {
         reservationEndTime: endTime,
       }
     },
+    // 日期切换监听
     handleDateChange(dateInfo) {
-      console.log(dateInfo.selectedDate);
-      console.log('当前选中的星期：', dateInfo.selectedWeek);
-      console.log('选中日期的索引：', dateInfo.activeIndex);
+      this.nowDateInfo = dateInfo;
+      // console.log('当前选中的日期：',dateInfo.selectedDate);
+      // console.log('当前选中的星期：', dateInfo.selectedWeek);
+      // console.log('选中日期的索引：', dateInfo.activeIndex);
       const dateStr = dateInfo?.selectedDate?.replace(/-/g, "") || '';
-      console.log('选中的日期更新后的传参：', dateStr);
       this.queryParams.isNeedAll = true;
       this.queryParams.reservationDate = dateStr;
-      this.queryLogList();
+      this.queryLogList(true);
+      this.queryLogList(false);
     },
+    // 提交预约
     handleSubmitReservation() {
       const self = this;
       this.formParams.mahjongRoomId = 1;
@@ -166,11 +201,11 @@ export default {
         return; // 阻止提交
       }
 
-      console.log('当前参数：', this.formParams)
       addMahjongReservationLog(self.formParams)
         .then((res) => {
           if (res?.code === 200) {
-            self.queryLogList();
+            this.queryLogList(true);
+            this.queryLogList(false);
             uni.showToast({
               title: "提交预约订单成功！",
               icon: "none",

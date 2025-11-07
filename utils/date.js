@@ -50,7 +50,7 @@ export function initData() {
 		1: "明天",
 		2: "后天"
 	}
-	for (let i = 0; i < 7; i++) {
+	for (let i = 0; i < 30; i++) {
 		time.push({
 			date: timeStamp(now + timeStr * i).date, //保存日期
 			timeStamp: now + timeStr * i, //保存时间戳

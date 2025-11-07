@@ -3,8 +3,8 @@
     :height="drawerHeight">
     <scroll-view :scroll-y="true" class="fx67ll-reservation-drawer">
       <view class="fx67ll-reservation-remark">
-        <uni-easyinput type="textarea" :value="logRemark" placeholder="有需要的话可以在这里记录备注信息" maxlength="1023"
-          :disabled="isNetworkLoading" @input="logRemarkChange" />
+        <uni-easyinput type="textarea" :value="reservationRemark" placeholder="有需要的话可以在这里记录备注信息" maxlength="1023"
+          :disabled="isNetworkLoading" @input="reservationRemarkChange" />
       </view>
       <view class="fx67ll-reservation-btn">
         <button class="fx67ll-btn-submit" type="default" :disabled="isNetworkLoading" @click="submitLogForm"
@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { updateMahjongReservationLog } from "@/api/mahjong/log";
+import { editMahjongReservationLog } from "@/api/mahjong/log";
 
 export default {
   name: 'editDrawer',
@@ -45,7 +45,7 @@ export default {
       // Drawer组件相关参数
       drawerHeight: "calc(100% - 300px)",
       // 表单相关参数
-      logRemark: "",
+      reservationRemark: "",
     };
   },
   watch: {
@@ -58,27 +58,27 @@ export default {
     logInfo(newValue, oldValue) {
       const self = this;
       if (newValue?.mahjongReservationLogId) {
-        const { noteRemark } = newValue;
-        self.noteRemark = noteRemark || "";
+        const { reservationRemark } = newValue;
+        self.reservationRemark = reservationRemark || "";
       }
     },
   },
   methods: {
     // 输入预约订单备注
-    logRemarkChange: function (e) {
-      this.logRemark = e;
+    reservationRemarkChange: function (e) {
+      this.reservationRemark = e;
     },
     // 新增或修改预约订单信息
     submitLogForm() {
       const self = this;
       const formParams = {
-        logRemark: self.logRemark,
+        reservationRemark: self.reservationRemark,
       };
       const mahjongReservationLogarams = {
         ...self.logInfo,
         ...formParams,
       };
-      updateMahjongReservationLog(mahjongReservationLogarams).then((res) => {
+      editMahjongReservationLog(mahjongReservationLogarams).then((res) => {
         self.isNetworkLoading = false;
         if (res?.code === 200) {
           self.closeDrawer();
