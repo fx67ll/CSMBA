@@ -14,7 +14,7 @@ export function updateUserPwd(oldPassword, newPassword) {
   })
 }
 
-// 查询用户个人信息
+// 查询用户账户信息
 export function getUserProfile() {
   return request({
     url: '/system/user/profile',
@@ -22,7 +22,7 @@ export function getUserProfile() {
   })
 }
 
-// 修改用户个人信息
+// 修改用户账户信息
 export function updateUserProfile(data) {
   return request({
     url: '/system/user/profile',

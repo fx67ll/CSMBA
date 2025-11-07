@@ -13,15 +13,6 @@ export function listMahjongReservationLog(data) {
   });
 }
 
-// // 查询麻将室预约记录列表
-// export function listMahjongReservationLog(query) {
-//   return request({
-//     url: '/mahjong/reservation/log/getReservationLogListForApp',
-//     method: "get",
-//     params: query,
-//   });
-// }
-
 // 新增麻将室预约记录
 export function addMahjongReservationLog(data) {
   return request({
