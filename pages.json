@@ -49,7 +49,7 @@
     {
       "path": "pages/mine/info/index",
       "style": {
-        "navigationBarTitleText": "个人信息"
+        "navigationBarTitleText": "账户信息"
       }
     },
     {
@@ -117,7 +117,13 @@
         "pagePath": "pages/mahjong/reservation/index",
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/fx67ll-app.jpg",
-        "text": "预约"
+        "text": "立刻预约"
+      },
+      {
+        "pagePath": "pages/mahjong/log/index",
+        "iconPath": "static/images/tabbar/mine.png",
+        "selectedIconPath": "static/images/fx67ll-app.jpg",
+        "text": "预约历史"
       },
       {
         "pagePath": "pages/mine/index",
