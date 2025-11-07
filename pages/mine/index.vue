@@ -1,6 +1,6 @@
 <template>
   <view class="mine-container" :style="{ height: `${windowHeight}px` }">
-    <!--顶部个人信息栏-->
+    <!--顶部账户信息栏-->
     <view class="header-section">
       <view class="flex padding justify-between">
         <view class="flex align-center">
@@ -17,7 +17,7 @@
           </view>
         </view>
         <view @click="handleToInfo" class="flex align-center">
-          <text>个人信息</text>
+          <text>账户信息</text>
           <view class="iconfont icon-right"></view>
         </view>
       </view>
@@ -44,21 +44,12 @@
       </view>
 
       <view class="menu-list">
-        <view class="list-cell list-cell-arrow" @click="handleToMahjongLog">
-          <view class="menu-item-box">
-            <view><uni-icons color="#2ecc71" type="cart" size="20"></uni-icons></view>
-            <view>我的预约历史</view>
-          </view>
-        </view>
         <view class="list-cell list-cell-arrow" @click="handleToCubeGame">
           <view class="menu-item-box">
             <view><uni-icons color="#2ecc71" type="star" size="20"></uni-icons></view>
             <view>魔方小游戏</view>
           </view>
         </view>
-      </view>
-
-      <view class="menu-list menu-list-last">
         <view class="list-cell list-cell-arrow" @click="handleAbout">
           <view class="menu-item-box">
             <view><uni-icons color="#2ecc71" type="paperclip" size="20"></uni-icons></view>
@@ -101,9 +92,6 @@ export default {
       this.$tab.navigateTo(
         `/pages/common/webview/index?title=${site.title}&url=${site.url}`
       );
-    },
-    handleToMahjongLog() {
-      this.$tab.navigateTo("/pages/mahjong/log/index");
     },
     handleToCubeGame() {
       this.$tab.navigateTo(

@@ -8,8 +8,8 @@
         <uni-forms-item label="用户性别" name="sex" required>
           <uni-data-checkbox v-model="user.sex" :localdata="sexs" />
         </uni-forms-item>
-        <uni-forms-item label="手机号码" name="phonenumber" required>
-          <uni-easyinput v-model="user.phonenumber" placeholder="请输入手机号码" />
+        <uni-forms-item label="联系方式" name="contactInfo" required>
+          <uni-easyinput v-model="user.contactInfo" placeholder="请输入联系方式" />
         </uni-forms-item>
         <uni-forms-item label="电子邮箱" name="email" required>
           <uni-easyinput v-model="user.email" placeholder="请输入电子邮箱" />
@@ -29,7 +29,7 @@ export default {
     return {
       user: {
         nickName: "",
-        phonenumber: "",
+        contactInfo: "",
         email: "",
         sex: "",
       },
@@ -57,18 +57,6 @@ export default {
             {
               required: true,
               errorMessage: "用户性别不能为空",
-            },
-          ],
-        },
-        phonenumber: {
-          rules: [
-            {
-              required: true,
-              errorMessage: "手机号码不能为空",
-            },
-            {
-              pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/,
-              errorMessage: "请输入正确的手机号码",
             },
           ],
         },
@@ -104,7 +92,7 @@ export default {
       this.$refs.form.validate().then((res) => {
         updateUserProfile(this.user).then((response) => {
           uni.showToast({
-            title: "个人信息修改成功！",
+            title: "账户信息修改成功！",
             icon: "none",
             duration: 1998,
           });
