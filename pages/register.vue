@@ -13,56 +13,30 @@
     <view class="login-form-content">
       <view class="input-item flex align-center">
         <view class="iconfont icon-user icon"></view>
-        <input
-          v-model="registerForm.username"
-          class="input"
-          type="text"
-          placeholder="请输入账号"
-          maxlength="30"
-        />
+        <input v-model="registerForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30" />
       </view>
       <view class="input-item flex align-center">
         <view class="iconfont icon-password icon"></view>
-        <input
-          v-model="registerForm.password"
-          type="password"
-          class="input"
-          placeholder="请输入密码"
-          maxlength="20"
-        />
+        <input v-model="registerForm.password" type="password" class="input" placeholder="请输入密码" maxlength="20" />
       </view>
       <view class="input-item flex align-center">
         <view class="iconfont icon-password icon"></view>
-        <input
-          v-model="registerForm.confirmPassword"
-          type="password"
-          class="input"
-          placeholder="请输入重复密码"
-          maxlength="20"
-        />
+        <input v-model="registerForm.confirmPassword" type="password" class="input" placeholder="请输入重复密码"
+          maxlength="20" />
       </view>
-      <view
-        class="input-item flex align-center"
-        style="width: 60%; margin: 0px"
-        v-if="captchaEnabled"
-      >
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.contactInfo" class="input" type="text" placeholder="请输入联系方式" maxlength="50" />
+      </view>
+      <view class="input-item flex align-center" style="width: 60%; margin: 0px" v-if="captchaEnabled">
         <view class="iconfont icon-code icon"></view>
-        <input
-          v-model="registerForm.code"
-          type="number"
-          class="input"
-          placeholder="请输入验证码"
-          maxlength="4"
-        />
+        <input v-model="registerForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4" />
         <view class="login-code">
           <image :src="codeUrl" @click="getCode" class="login-code-img"></image>
         </view>
       </view>
       <view class="action-btn">
-        <button
-          @click="handleRegister()"
-          class="register-btn cu-btn block bg-blue lg round"
-        >
+        <button @click="handleRegister()" class="register-btn cu-btn block bg-blue lg round">
           注册
         </button>
       </view>
@@ -86,6 +60,7 @@ export default {
         username: "",
         password: "",
         confirmPassword: "",
+        contactInfo: "",
         code: "",
         uuid: "",
       },
@@ -120,6 +95,8 @@ export default {
         this.$modal.msgError("请再次输入您的密码");
       } else if (this.registerForm.password !== this.registerForm.confirmPassword) {
         this.$modal.msgError("两次输入的密码不一致");
+      } else if (this.registerForm.contactInfo === "") {
+        this.$modal.msgError("请输入联系方式");
       } else if (this.registerForm.code === "" && this.captchaEnabled) {
         this.$modal.msgError("请输入验证码");
       } else {
@@ -131,18 +108,35 @@ export default {
     async register() {
       register(this.registerForm)
         .then((res) => {
-          this.$modal.closeLoading();
-          uni.showModal({
-            title: "系统提示",
-            content: "恭喜你，您的账号 " + this.registerForm.username + " 注册成功！",
-            success: function (res) {
-              if (res.confirm) {
-                uni.redirectTo({ url: `/pages/login` });
-              }
-            },
+          console.log(111, res);
+          if (res?.code === 200) {
+            this.$modal.closeLoading();
+            uni.showModal({
+              title: "系统提示",
+              content: "恭喜你，您的账号 " + this.registerForm.username + " 注册成功！",
+              success: function (res) {
+                if (res.confirm) {
+                  uni.redirectTo({ url: `/pages/login` });
+                }
+              },
+            });
+          } else {
+            uni.showToast({
+              title: res?.msg || "注册失败，请联系管理员！",
+              icon: "none",
+              duration: 1998,
+            });
+          }
+        })
+        .catch((res) => {
+          console.log(222, res);
+          uni.showToast({
+            title: res?.msg || "注册失败，请联系管理员！",
+            icon: "none",
+            duration: 1998,
           });
         })
-        .catch(() => {
+        .finally(() => {
           if (this.captchaEnabled) {
             this.getCode();
           }
@@ -162,6 +156,7 @@ export default {
 <style lang="scss">
 page {
   background-color: #ffffff;
+  padding-bottom: 40px;
 }
 
 .normal-login-container {

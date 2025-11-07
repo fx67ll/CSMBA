@@ -1,69 +1,29 @@
 <template>
   <view class="normal-login-container">
     <view class="logo-content align-center justify-center flex">
-      <image
-        style="width: 100rpx; height: 100rpx"
-        :src="globalConfig.appInfo.logo"
-        mode="widthFix"
-      ></image>
+      <image style="width: 100rpx; height: 100rpx" :src="globalConfig.appInfo.logo" mode="widthFix"></image>
       <text class="title">麻将室预约登记</text>
     </view>
     <view class="login-form-content">
       <view class="input-item flex align-center">
         <view class="iconfont icon-user icon"></view>
-        <input
-          v-model="loginForm.username"
-          class="input"
-          type="text"
-          placeholder="请输入账号"
-          maxlength="30"
-        />
+        <input v-model="loginForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30" />
       </view>
       <view class="input-item flex align-center">
         <view class="iconfont icon-password icon"></view>
-        <input
-          v-model="loginForm.password"
-          type="password"
-          class="input"
-          placeholder="请输入密码"
-          maxlength="20"
-        />
+        <input v-model="loginForm.password" type="password" class="input" placeholder="请输入密码" maxlength="20" />
       </view>
-      <view
-        class="input-item flex align-center"
-        style="width: 60%; margin: 0px"
-        v-if="captchaEnabled"
-      >
+      <view class="input-item flex align-center" style="width: 60%; margin: 0px" v-if="captchaEnabled">
         <view class="iconfont icon-code icon"></view>
-        <input
-          v-model="loginForm.code"
-          type="number"
-          class="input"
-          placeholder="请输入验证码"
-          maxlength="4"
-        />
+        <input v-model="loginForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4" />
         <view class="login-code">
-          <image
-            :src="codeUrl"
-            @click="getCodeDebounce"
-            class="login-code-img"
-            v-if="codeUrl"
-          ></image>
-          <button
-            class="login-code-img"
-            :loading="isLoginLoading"
-            :disabled="isLoginLoading"
-            v-if="!codeUrl"
-          ></button>
+          <image :src="codeUrl" @click="getCodeDebounce" class="login-code-img" v-if="codeUrl"></image>
+          <button class="login-code-img" :loading="isLoginLoading" :disabled="isLoginLoading" v-if="!codeUrl"></button>
         </view>
       </view>
       <view class="action-btn">
-        <button
-          @click="handleLogin"
-          :loading="isLoginLoading"
-          :disabled="isLoginLoading"
-          class="login-btn cu-btn block bg-blue lg round"
-        >
+        <button @click="handleLogin" :loading="isLoginLoading" :disabled="isLoginLoading"
+          class="login-btn cu-btn block bg-blue lg round">
           登录
         </button>
       </view>
@@ -171,13 +131,29 @@ export default {
       this.isLoginLoading = true;
       this.$store
         .dispatch("Login", this.loginForm)
-        .then(() => {
-          self.loginSuccess();
-          // self.$modal.closeLoading();
+        .then((res) => {
+          console.log(111, res);
+          if (!res) {
+            self.loginSuccess();
+          } else {
+            uni.showToast({
+              title: res?.msg || "登录失败，请联系管理员！",
+              icon: "none",
+              duration: 1998,
+            });
+          }
         })
-        .catch(() => {
-          if (self.captchaEnabled) {
-            self.getCode();
+        .catch((res) => {
+          console.log(222, res);
+          uni.showToast({
+            title: res?.msg || "登录失败，请联系管理员！",
+            icon: "none",
+            duration: 1998,
+          });
+        })
+        .finally(() => {
+          if (this.captchaEnabled) {
+            this.getCode();
           }
         });
     },

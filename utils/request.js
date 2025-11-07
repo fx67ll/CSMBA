@@ -66,11 +66,13 @@ const request = config => {
           });
           reject('无效的会话，或者会话已过期，请重新登录。');
         } else if (code === 500) {
-          toast(msg);
-          reject('500');
+          // toast(msg);
+          // reject('500');
+          reject(res.data);
         } else if (code !== 200) {
-          toast(msg);
-          reject(code);
+          // toast(msg);
+          // reject(code);
+          reject(res.data);
         }
         resolve(res.data);
       })
