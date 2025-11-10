@@ -1,7 +1,7 @@
 // 应用全局配置
 module.exports = {
-  // baseUrl: 'https://vip.fx67ll.com/vip-api',
-  baseUrl: 'http://localhost:9897/vip-api',
+  baseUrl: 'https://vip.fx67ll.com/vip-api',
+  // baseUrl: 'http://localhost:9897/vip-api',
   // 不校验登录信息的api
   white_api: ['/captchaImage', '/login', '/register', '/secret/key/getSecretKeyConfigForApp'],
   // 应用信息
