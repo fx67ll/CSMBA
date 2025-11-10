@@ -178,27 +178,25 @@ export default {
       this.formParams.mahjongRoomId = 1;
       this.formParams.reservationStatus = 0;
 
-      // 检查开始时间是否晚于结束时间
-      if (this.formParams.reservationStartTime && this.formParams.reservationEndTime) {
-        const start = moment(this.formParams.reservationStartTime);
-        const end = moment(this.formParams.reservationEndTime);
-
-        if (start.isAfter(end)) {
-          uni.showToast({
-            title: "开始时间不能晚于结束时间！",
-            icon: "none",
-            duration: 1998,
-          });
-          return; // 阻止提交
-        }
-      } else {
-        // 检查时间是否为空
+      // 检查时间是否为空
+      if (!this.formParams.reservationStartTime || !this.formParams.reservationEndTime) {
         uni.showToast({
           title: "请选择完整的预约时间段！",
           icon: "none",
           duration: 1998,
         });
         return; // 阻止提交
+      }
+
+      // 处理时间逻辑
+      const start = moment(this.formParams.reservationStartTime);
+      const end = moment(this.formParams.reservationEndTime);
+
+      // 如果开始时间晚于结束时间，则自动对调
+      if (start.isAfter(end)) {
+        // 交换时间值
+        [this.formParams.reservationStartTime, this.formParams.reservationEndTime] =
+          [this.formParams.reservationEndTime, this.formParams.reservationStartTime];
       }
 
       addMahjongReservationLog(self.formParams)
