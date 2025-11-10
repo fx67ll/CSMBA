@@ -44,12 +44,12 @@
       </view>
 
       <view class="menu-list">
-        <view class="list-cell list-cell-arrow" @click="handleToCubeGame">
+        <!-- <view class="list-cell list-cell-arrow" @click="handleToCubeGame">
           <view class="menu-item-box">
             <view><uni-icons color="#2ecc71" type="star" size="20"></uni-icons></view>
             <view>魔方小游戏</view>
           </view>
-        </view>
+        </view> -->
         <view class="list-cell list-cell-arrow" @click="handleAbout">
           <view class="menu-item-box">
             <view><uni-icons color="#2ecc71" type="paperclip" size="20"></uni-icons></view>
@@ -108,7 +108,12 @@ export default {
       this.$tab.reLaunch("/pages/login");
     },
     handleToAvatar() {
-      this.$tab.navigateTo("/pages/mine/avatar/index");
+      // this.$tab.navigateTo("/pages/mine/avatar/index");
+      uni.showToast({
+        title: "暂不开放修改头像功能",
+        icon: "none",
+        duration: 1998,
+      });
     },
     handleLogout() {
       this.$modal.confirm("确定注销并退出系统吗？").then(() => {
