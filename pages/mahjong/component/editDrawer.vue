@@ -43,7 +43,7 @@ export default {
   data() {
     return {
       // Drawer组件相关参数
-      drawerHeight: "calc(100% - 300px)",
+      drawerHeight: "70%",
       // 表单相关参数
       reservationRemark: "",
     };
