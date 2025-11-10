@@ -40,7 +40,7 @@ export default {
       loginTime: "",
     };
   },
-  onLoad() {
+  onShow() {
     this.getUser();
   },
   methods: {
