@@ -47,7 +47,8 @@ export default {
     getUser() {
       getUserProfile().then((response) => {
         this.user = response.data;
-        this.userSex = this.user.sex === "0" ? "♂" : "♀";
+        const sexText = this.user.sex === "0" ? "♂" : "♀";
+        this.userSex = this.user.sex ? sexText : '-';
         this.roleGroup = response.roleGroup;
         this.postGroup = response.postGroup
           ? `${this.user.dept.deptName ? this.user.dept.deptName + " /" : ""} ${response.postGroup
