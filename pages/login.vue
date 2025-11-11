@@ -32,10 +32,7 @@
         <text @click="handleUserRegister" class="text-blue">立即注册</text>
       </view>
       <view class="xieyi text-center">
-        <text class="text-grey1">如果您有更多的疑问？</text>
-        <text @click="handleGetAuthorMoreInfo(4)" class="text-blue">{{
-          globalConfig.appInfo.author_info[4].title
-        }}</text>
+        <text class="text-grey1">如果您忘记密码，请联系管理员重置！</text>
       </view>
     </view>
     <!-- #ifdef H5 -->
@@ -80,10 +77,26 @@ export default {
       nowYear: moment().format("YYYY"),
     };
   },
+  onLoad() {
+    // 页面加载时检查是否有有效的登录信息
+    this.checkAutoLogin();
+  },
   created() {
     this.getCode();
   },
   methods: {
+    // 检查是否可以自动登录
+    checkAutoLogin() {
+      const loginInfo = uni.getStorageSync('loginInfo');
+
+      // 如果存在登录信息且未过期
+      if (loginInfo && loginInfo.expireTime && new Date().getTime() < loginInfo.expireTime) {
+        // 使用缓存的用户信息自动登录
+        this.$store.dispatch('SetUserInfo', loginInfo.userInfo).then(() => {
+          this.$tab.reLaunch("/pages/mahjong/reservation/index");
+        });
+      }
+    },
     // 用户注册
     handleUserRegister() {
       this.$tab.redirectTo(`/pages/register`);
@@ -158,10 +171,21 @@ export default {
         });
     },
     // 登录成功后，处理函数
-    loginSuccess(result) {
+    loginSuccess() {
       const self = this;
       // 设置用户信息
-      this.$store.dispatch("GetInfo").then((res) => {
+      this.$store.dispatch("GetInfo").then((userInfo) => {
+        // 登录成功后保存登录信息到本地存储，有效期7天
+        const sevenDaysLater = new Date().getTime() + 7 * 24 * 60 * 60 * 1000; // 7天的毫秒数
+        const loginInfo = {
+          userInfo: userInfo,          // 用户信息
+          loginForm: this.loginForm,   // 登录表单信息（账号密码）
+          expireTime: sevenDaysLater   // 过期时间
+        };
+
+        // 存储到本地缓存
+        uni.setStorageSync('loginInfo', loginInfo);
+
         self.isLoginLoading = false;
         self.$modal.closeLoading();
         self.$tab.reLaunch("/pages/mahjong/reservation/index");
