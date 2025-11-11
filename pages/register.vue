@@ -108,12 +108,12 @@ export default {
     async register() {
       register(this.registerForm)
         .then((res) => {
-          console.log(111, res);
           if (res?.code === 200) {
             this.$modal.closeLoading();
             uni.showModal({
               title: "系统提示",
-              content: "恭喜你，您的账号 " + this.registerForm.username + " 注册成功！",
+              // content: "恭喜你，您的账号 " + this.registerForm.username + " 注册成功！",
+              content: `恭喜你，注册成功! 账号:${this.registerForm.username} 密码:${this.registerForm.password}`,
               success: function (res) {
                 if (res.confirm) {
                   uni.redirectTo({ url: `/pages/login` });
