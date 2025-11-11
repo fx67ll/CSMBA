@@ -47,7 +47,7 @@
                   <view class="detail-item">
                     <text class="label icon-create">📅</text>
                     <text class="label-text">创建时间:</text>
-                    <text class="value">{{ formatTime(item.createTime) || '-' }}</text>
+                    <text class="value">{{ formatTimeForJapan(item.createTime) || '-' }}</text>
                   </view>
                   <!-- 新增：备注信息 -->
                   <view class="detail-item">
@@ -129,7 +129,7 @@ export default {
       return timeStamp + (item?.mahjongReservationLogId || 0);
     },
     // 格式化完整时间（用于创建时间）
-    formatTime(timeStr) {
+    formatTimeForJapan(timeStr) {
       if (!timeStr) return '-';
       // 日本时间比国内时间晚1个小时
       const date = new Date(new Date(timeStr).getTime() + 3600000);

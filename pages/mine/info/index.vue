@@ -14,9 +14,9 @@
       <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'auth-filled' }" title="角色"
         :rightText="roleGroup || '-'" />
       <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'calendar-filled' }" title="创建时间"
-        :rightText="user.createTime || '-'" />
-      <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'navigate-filled' }" title="登录时间"
-        :rightText="loginTime || '-'" />
+        :rightText="formatTimeForJapan(user.createTime)" />
+      <!-- <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'navigate-filled' }" title="登录时间"
+        :rightText="formatTimeForJapan(loginTime)" /> -->
     </uni-list>
     <button class="fx67ll-info-btn" type="primary" @click="handleToEditInfo">
       编辑资料
@@ -58,6 +58,28 @@ export default {
     },
     handleToEditInfo() {
       this.$tab.navigateTo("/pages/mine/info/edit");
+    },
+    formatTimeForJapan(timeStr) {
+      if (!timeStr) return '-';
+      // 日本时间比国内时间晚1个小时
+      const date = new Date(new Date(timeStr).getTime() + 3600000);
+      return `${date.getFullYear()} -${this.padZero(date.getMonth() + 1)} -${this.padZero(date.getDate())} ${this.padZero(date.getHours())}:${this.padZero(date.getMinutes())} `;
+    },
+    // 单独格式化日期
+    formatDate(timeStr) {
+      if (!timeStr) return '-';
+      const date = new Date(timeStr);
+      return `${date.getFullYear()} -${this.padZero(date.getMonth() + 1)} -${this.padZero(date.getDate())} `;
+    },
+    // 单独格式化时分
+    formatHourMinute(timeStr) {
+      if (!timeStr) return '-';
+      const date = new Date(timeStr);
+      return `${this.padZero(date.getHours())}:${this.padZero(date.getMinutes())} `;
+    },
+    // 数字补零
+    padZero(num) {
+      return num < 10 ? `0${num} ` : num;
     },
   },
 };
