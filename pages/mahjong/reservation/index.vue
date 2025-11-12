@@ -1,9 +1,18 @@
 <template>
   <view class="fx67ll-reservation-box">
-    <prettyTimes ref="prettyTimes" :beginTime="appointConfig.allowBeginTime" :endTime="appointConfig.allowEndTime"
+    <!-- 新增：全局遮罩层 -->
+    <view v-if="loading" class="loading-mask">
+      <view class="loading-content">
+        <text class="loading-text">加载数据中...</text>
+      </view>
+    </view>
+
+    <prettyTimes ref="prettyTimes" :showOvernight="appointConfig.showOvernight"
+      :beginTime="appointConfig.allowBeginTime" :endTime="appointConfig.allowEndTime"
       :timeInterval="appointConfig.allowTimeInterval" :appointTime="appointConfig.appointTime" :isSection="true"
       :disableTimeSlot="appointConfig.disableTimeSlot" :myAppointTimeSlot="appointConfig.myAppointTimeSlot"
-      @change="handleTimeChange" @date-change="handleDateChange" @ready="handleComponentReady">
+      :formParams="formParams" @change="handleTimeChange" @date-change="handleDateChange" @ready="handleComponentReady"
+      @overnight-change="handleOvernightChange" @overnight-submit="handleOvernightSubmit">
     </prettyTimes>
 
     <!-- 新增：底部提交按钮容器 -->
@@ -23,13 +32,17 @@ import { listMahjongReservationLog, addMahjongReservationLog } from "@/api/mahjo
 import moment from "@/node_modules/moment";
 import "@/node_modules/moment/locale/zh-cn";
 
+// 引入underscore库用于防抖
+import _ from "@/node_modules/underscore";
+
 export default {
   components: { prettyTimes },
   data() {
     return {
       appointConfig: {
-        allowBeginTime: "00:00:00",
-        allowEndTime: "23:00:00",
+        showOvernight: true,
+        allowBeginTime: "10:00:00",
+        allowEndTime: "22:00:00",
         allowTimeInterval: 1,
         appointTime: ["2022-02-10 15:30:00"],
         disableTimeSlot: [],
@@ -50,12 +63,16 @@ export default {
         reservationEndTime: null,
         reservationStatus: null,
       },
-      nowDateInfo: {}
+      nowDateInfo: {},
+      isOvernightSelected: false,  // 新增：标记是否选择了包夜
+      // 新增：防抖函数实例
+      debouncedSubmitReservation: null,
+      // 新增：加载状态
+      loading: false
     };
   },
   onShow() {
     // 重新渲染当前日期的预约
-    console.log('nowDateInfo', this.nowDateInfo);
     this.handleDateChange(this.nowDateInfo);
   },
   onLoad() {
@@ -75,6 +92,9 @@ export default {
     // 4. 首次加载数据
     this.queryLogList(true);
     this.queryLogList(false);
+
+    // 新增：初始化防抖函数
+    this.debouncedSubmitReservation = _.debounce(this._realHandleSubmitReservation, 500, true);
   },
   methods: {
     // 子组件渲染完成后，同步初始日期到父组件 nowDateInfo
@@ -97,6 +117,10 @@ export default {
     // 查询预约历史记录
     queryLogList(isNeedAll = true) {
       const self = this;
+
+      // 新增：开始查询时显示加载状态
+      this.loading = true;
+
       this.queryParams.pageNum = 1;
       this.queryParams.pageSize = 999;
       this.queryParams.isNeedAll = isNeedAll;
@@ -140,19 +164,41 @@ export default {
         })
         .catch((res) => {
           self.clearLogList();
+        })
+        .finally(() => {
+          // 新增：查询完成后隐藏加载状态
+          this.loading = false;
         });
+    },
+    // 新增：包夜变化事件处理
+    handleOvernightChange(overnightData) {
+      if (overnightData) {
+        this.isOvernightSelected = true;
+        this.formParams.reservationStartTime = overnightData.start;
+        this.formParams.reservationEndTime = moment(overnightData.end).subtract(1, 'h').format('YYYY-MM-DD HH:mm:ss');
+      } else {
+        this.isOvernightSelected = false;
+        this.formParams.reservationStartTime = null;
+        this.formParams.reservationEndTime = null;
+      }
+    },
+    // 新增：包夜提交事件处理
+    handleOvernightSubmit(overnightData) {
+      if (overnightData) {
+        this.formParams.reservationStartTime = overnightData.start;
+        this.formParams.reservationEndTime = overnightData.end;
+        this.submitReservation();
+      }
     },
     // 时间范围点击监听 
     handleTimeChange(timeArr) {
       const self = this;
 
+      // 选择普通时间时，取消包夜标记
+      this.isOvernightSelected = false;
+
       let startTime = timeArr?.beginTime || '';
       let endTime = timeArr?.endTime || '';
-
-      // 如果开始时间和结束时间相同，则给结束时间加1小时
-      if (startTime && endTime && startTime === endTime) {
-        endTime = moment(startTime).add(1, 'hours').format('YYYY-MM-DD HH:mm:ss');
-      }
 
       this.formParams = {
         ...self.formParams,
@@ -172,8 +218,20 @@ export default {
       this.queryLogList(true);
       this.queryLogList(false);
     },
-    // 提交预约
+    // 提交预约 - 添加防抖处理
     handleSubmitReservation() {
+      // 调用防抖函数
+      this.debouncedSubmitReservation();
+    },
+
+    // 新增：实际的提交预约逻辑（原handleSubmitReservation方法内容）
+    _realHandleSubmitReservation() {
+      // 如果已经通过包夜提交事件处理，则不再重复处理
+      if (this.isOvernightSelected && this.formParams.reservationStartTime && this.formParams.reservationEndTime) {
+        this.submitReservation();
+        return;
+      }
+
       const self = this;
       this.formParams.mahjongRoomId = 1;
       this.formParams.reservationStatus = 0;
@@ -199,11 +257,22 @@ export default {
           [this.formParams.reservationEndTime, this.formParams.reservationStartTime];
       }
 
+      this.submitReservation();
+    },
+    // 新增：统一的提交方法
+    submitReservation() {
+      const self = this;
+      this.formParams.reservationEndTime = moment(self.formParams.reservationEndTime).add(1, 'h').format('YYYY-MM-DD HH:mm:ss');
       addMahjongReservationLog(self.formParams)
         .then((res) => {
           if (res?.code === 200) {
             this.queryLogList(true);
             this.queryLogList(false);
+            // 重置表单
+            this.formParams.reservationStartTime = null;
+            this.formParams.reservationEndTime = null;
+            this.isOvernightSelected = false;
+
             uni.showToast({
               title: "提交预约订单成功！",
               icon: "none",
@@ -254,5 +323,33 @@ page {
   color: #ffffff;
   font-size: 32rpx;
   border-radius: 40rpx; // 圆角样式
+}
+
+/* 新增：全局遮罩层样式 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  background-color: #ffffff;
+  padding: 40rpx 60rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text {
+  font-size: 32rpx;
+  color: #333333;
 }
 </style>

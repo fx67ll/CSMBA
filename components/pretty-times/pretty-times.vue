@@ -28,7 +28,7 @@
 									: _index == timeActive ? selectedItemColor : '#333')
 						}" @click="selectTimeEvent(_index, item)">
 							<text v-if="isQuantum">{{ item.begin }}~{{ item.end }}</text>
-							<text v-else>{{ item.time }}</text>
+							<text v-else>{{ item.timeRange }}</text>
 							<!-- 核心修改1：区分过期/约满/可预约文本 -->
 							<text class="all">
 								{{ item.isMyAppoint ? '我已约' : (item.isExpired ? '已过期' : (item.disable ? disableText :
@@ -38,6 +38,7 @@
 					</view>
 				</template>
 			</view>
+
 			<!-- 预约时间段 -->
 			<view class="time-box" v-else>
 				<template v-for="(item, _index) in timeArr">
@@ -45,12 +46,12 @@
 						<view class="item-box" :class="{
 							'disable': item.disable && !item.isMyAppoint,
 							'my-appoint': item.isMyAppoint,
-							'active': item.time == timeQuanBegin || item.time == timeQuanEnd
+							'active': item.time == timeQuanBegin || item.time == timeQuanEnd || item.isInclude
 						}" :style="{
 							color: item.isMyAppoint ? '#2ecc71' :
-								(item.time == timeQuanBegin || item.time == timeQuanEnd ? selectedItemColor : '#333')
+								(item.time == timeQuanBegin || item.time == timeQuanEnd || item.isInclude ? selectedItemColor : '#333')
 						}" @click="handleSection(_index, item)">
-							<text>{{ item.time }}</text>
+							<text>{{ item.timeRange }}</text>
 							<!-- 核心修改2：区分过期/约满/可预约文本 -->
 							<text class="all">
 								{{ item.isMyAppoint ? '我已约' : (item.isExpired ? '已过期' : (item.disable ? disableText :
@@ -59,6 +60,22 @@
 						</view>
 					</view>
 				</template>
+
+				<!-- 包夜选项 - 修改：放在时间段的最后，占用两个格子 -->
+				<view class="item overnight-item-wrapper" v-if="showOvernight">
+					<view class="item-box overnight-box" :class="{
+						'active': isOvernightActive,
+						'disable': isOvernightDisabled
+					}" @click="selectOvernightEvent">
+						<view class="overnight-content">
+							<text class="overnight-title">包夜</text>
+							<text class="overnight-time">23:00 ~ 次日10:00</text>
+							<text class="overnight-status">
+								{{ getOvernightStatusText() }}
+							</text>
+						</view>
+					</view>
+				</view>
 			</view>
 		</view>
 		<view class="bottom">
@@ -73,7 +90,6 @@
 </template>
 
 <script>
-
 import {
 	initData,
 	initTime,
@@ -97,6 +113,11 @@ export default {
 			default: false
 		},
 		isSection: { //预约时间段
+			type: Boolean,
+			default: false
+		},
+		// 新增：是否显示包夜选项
+		showOvernight: {
 			type: Boolean,
 			default: false
 		},
@@ -146,6 +167,13 @@ export default {
 			default() {
 				return []
 			}
+		},
+		// 新增：用于回显的formParams
+		formParams: {
+			type: Object,
+			default() {
+				return {}
+			}
 		}
 	},
 	watch: {
@@ -164,6 +192,14 @@ export default {
 			handler(val) {
 				this.initOnload()
 			}
+		},
+		// 新增：监听formParams变化，用于回显
+		formParams: {
+			handler(val) {
+				this.checkOvernightEcho();
+				this.checkTimeSectionEcho();
+			},
+			deep: true
 		}
 	},
 	data() {
@@ -178,7 +214,15 @@ export default {
 			timeQuanBeginIndex: 0, //时间段开始的下标
 			selectDate: "", //选择的日期
 			timeQuanBegin: "", //时间段开始时间
-			timeQuanEnd: "", //时间段结束时间
+			timeQuanEnd: "", //时间段结束时间,
+			// 新增：包夜选中状态
+			isOvernightActive: false,
+			// 新增：包夜禁用状态
+			isOvernightDisabled: false,
+			// 新增：包夜是否已过期
+			isOvernightExpired: false,
+			// 新增：包夜是否是我已约
+			isOvernightMyAppoint: false
 		}
 	},
 	created(props) {
@@ -195,11 +239,43 @@ export default {
 			this.timeQuanBegin = this.timeQuanEnd = ""
 			let isFullTime = true
 
-			// 计算“当前时间+1小时”
+			// 计算"当前时间+1小时"
 			const nowTimeStr = currentTime().time;
 			const nowTimeStamp = new Date(`2000-01-01 ${nowTimeStr}`).getTime();
 			const nextHourTimeStamp = nowTimeStamp + 3600000;
 			const nextHourTime = new Date(nextHourTimeStamp).toTimeString().slice(0, 8);
+
+			// 核心修改1：为时间段模式的时间项添加时间范围显示（去掉秒）
+			if (this.isSection && !this.isQuantum) {
+				this.timeArr.forEach((item, index) => {
+					const currentTime = item.time;
+					// 去掉秒数，只保留小时和分钟
+					const currentTimeWithoutSeconds = currentTime.slice(0, 5);
+					// 计算结束时间：当前时间 + 时间间隔
+					const currentTimeStamp = new Date(`2000-01-01 ${currentTime}`).getTime();
+					const endTimeStamp = currentTimeStamp + (this.timeInterval * 3600000);
+					const endTime = new Date(endTimeStamp).toTimeString().slice(0, 5);
+					// 添加时间范围属性（不带秒）
+					item.timeRange = `${currentTimeWithoutSeconds}~${endTime}`;
+				});
+			} else if (!this.isQuantum) {
+				// 普通时间模式也添加时间范围显示（去掉秒）
+				this.timeArr.forEach((item, index) => {
+					const currentTime = item.time;
+					// 去掉秒数，只保留小时和分钟
+					const currentTimeWithoutSeconds = currentTime.slice(0, 5);
+					const currentTimeStamp = new Date(`2000-01-01 ${currentTime}`).getTime();
+					const endTimeStamp = currentTimeStamp + (this.timeInterval * 3600000);
+					const endTime = new Date(endTimeStamp).toTimeString().slice(0, 5);
+					item.timeRange = `${currentTimeWithoutSeconds}~${endTime}`;
+				});
+			}
+
+			// 新增：检查包夜状态
+			this.checkOvernightStatus();
+
+			// 新增：检查时间段回显
+			this.checkTimeSectionEcho();
 
 			this.timeArr.forEach((item, index) => {
 				// 初始化状态：清除之前的标记
@@ -283,7 +359,13 @@ export default {
 					if (!item.disable && !item.isMyAppoint) {
 						isFullTime = false
 					}
-					this.isSection && (item.isInclude = false)
+					// 初始化时不清除isInclude，以便回显
+					if (this.isSection) {
+						// 只有在没有回显数据时才重置isInclude
+						if (!this.formParams.reservationStartTime || !this.formParams.reservationEndTime) {
+							item.isInclude = false;
+						}
+					}
 					if (this.isMultiple && (this.orderTimeArr[this.selectDate] || []).includes(item.time)) {
 						item.isActive = true
 					}
@@ -295,11 +377,199 @@ export default {
 			this.timeActive = -1
 			for (let i = 0, len = this.timeArr.length; i < len; i++) {
 				if (!this.timeArr[i].disable && !this.timeArr[i].isMyAppoint) {
-					this.orderDateTime = `${this.selectDate} ${this.timeArr[i].time}`
+					// 核心修改5：显示时间时去掉秒数
+					const timeWithoutSeconds = this.timeArr[i].time.slice(0, 5);
+					this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}`
 					this.timeActive = i
 					return
 				}
 			}
+		},
+		// 新增：检查时间段回显
+		checkTimeSectionEcho() {
+			if (!this.isSection || !this.formParams.reservationStartTime || !this.formParams.reservationEndTime) {
+				return;
+			}
+
+			const startTime = this.formParams.reservationStartTime;
+			const endTime = this.formParams.reservationEndTime;
+
+			// 检查是否是当前选中的日期
+			const startDate = startTime.split(' ')[0];
+			if (startDate !== this.selectDate) {
+				return;
+			}
+
+			// 解析开始和结束时间
+			const startHour = startTime.split(' ')[1].slice(0, 5);
+			const endHour = endTime.split(' ')[1].slice(0, 5);
+
+			// 找到开始和结束时间对应的索引
+			let startIndex = -1;
+			let endIndex = -1;
+
+			this.timeArr.forEach((item, index) => {
+				const itemTime = item.time.slice(0, 5);
+				if (itemTime === startHour) {
+					startIndex = index;
+				}
+				if (itemTime === endHour) {
+					endIndex = index;
+				}
+			});
+
+			if (startIndex !== -1 && endIndex !== -1) {
+				// 设置时间段选择状态
+				this.timeQuanBeginIndex = startIndex;
+				this.timeQuanBegin = this.timeArr[startIndex].time;
+				this.timeQuanEnd = this.timeArr[endIndex].time;
+
+				// 设置中间时间段的isInclude状态
+				for (let i = startIndex + 1; i < endIndex; i++) {
+					this.timeArr[i].isInclude = true;
+				}
+
+				// 更新显示的时间段
+				this.orderDateTime = `${this.selectDate} ${startHour} ~ ${endHour}`;
+			}
+		},
+		// 新增：获取包夜状态文本
+		getOvernightStatusText() {
+			if (this.isOvernightExpired) {
+				return '已过期';
+			} else if (this.isOvernightMyAppoint) {
+				return '我已约';
+			} else if (this.isOvernightDisabled) {
+				return '已约满';
+			} else {
+				return '可预约';
+			}
+		},
+		// 新增：检查包夜状态
+		checkOvernightStatus() {
+			// 重置包夜状态
+			this.isOvernightActive = false;
+			this.isOvernightDisabled = false;
+			this.isOvernightExpired = false;
+			this.isOvernightMyAppoint = false;
+
+			if (!this.showOvernight) return;
+
+			// 构建包夜时间段
+			const overnightStart = `${this.selectDate} 23:00:00`;
+			const nextDate = this.getNextDate(this.selectDate);
+			const overnightEnd = `${nextDate} 09:00:00`;
+
+			// 检查是否已过期（当日23:00之后不能预约包夜）
+			if (this.selectDate === this.nowDate) {
+				const currentDateTime = new Date();
+				const overnightStartTime = new Date(`${this.selectDate} 23:00:00`);
+				if (currentDateTime >= overnightStartTime) {
+					this.isOvernightExpired = true;
+					this.isOvernightDisabled = true;
+				}
+			}
+
+			// 检查是否是我已约
+			for (let time of this.myAppointTimeSlot) {
+				const [my_begin = "", my_end = ""] = time;
+				if (my_begin && my_end && my_begin === overnightStart && my_end === overnightEnd) {
+					this.isOvernightMyAppoint = true;
+					this.isOvernightDisabled = true;
+					break;
+				}
+			}
+
+			// 检查是否是已约满（被其他人预约）
+			if (!this.isOvernightMyAppoint && !this.isOvernightExpired) {
+				for (let time of this.disableTimeSlot) {
+					const [begin_time = "", end_time = ""] = time;
+					if (begin_time && end_time) {
+						// 如果包夜时间段与任何禁用时间段有重叠，则禁用包夜
+						if ((begin_time <= overnightStart && overnightStart < end_time) ||
+							(begin_time < overnightEnd && overnightEnd <= end_time) ||
+							(overnightStart <= begin_time && end_time <= overnightEnd)) {
+							this.isOvernightDisabled = true;
+							break;
+						}
+					}
+				}
+			}
+
+			// 检查回显：如果数据流中包含23:00到10:00的时间段，则选中包夜
+			this.checkOvernightEcho();
+		},
+		// 新增：检查包夜回显
+		checkOvernightEcho() {
+			if (!this.showOvernight) return;
+
+			// 构建包夜时间段
+			const overnightStart = `${this.selectDate} 23:00:00`;
+			const nextDate = this.getNextDate(this.selectDate);
+			const overnightEnd = `${nextDate} 10:00:00`;
+
+			// 检查当前选中的时间段是否匹配包夜
+			if (this.formParams && this.formParams.reservationStartTime && this.formParams.reservationEndTime) {
+				const startTime = this.formParams.reservationStartTime;
+				const endTime = this.formParams.reservationEndTime;
+
+				if (startTime === overnightStart && endTime === overnightEnd) {
+					this.isOvernightActive = true;
+					this.orderDateTime = `${this.selectDate} 23:00 ~ ${nextDate} 10:00`;
+				} else {
+					this.isOvernightActive = false;
+				}
+			}
+		},
+		// 新增：获取次日日期
+		getNextDate(date) {
+			const currentDate = new Date(date);
+			currentDate.setDate(currentDate.getDate() + 1);
+			return currentDate.toISOString().split('T')[0];
+		},
+		// 新增：包夜选择事件
+		selectOvernightEvent() {
+			// 包夜已禁用（已过期、我已约、已约满）时不能选择
+			if (this.isOvernightDisabled) return;
+
+			this.isOvernightActive = !this.isOvernightActive;
+
+			if (this.isOvernightActive) {
+				// 选中包夜时，清空其他时间选择
+				this.clearTimeSelection();
+
+				const overnightStart = `${this.selectDate} 23:00:00`;
+				const nextDate = this.getNextDate(this.selectDate);
+				const overnightEnd = `${nextDate} 10:00:00`;
+
+				// 触发包夜选择事件
+				this.$emit('overnight-change', {
+					start: overnightStart,
+					end: overnightEnd,
+					date: this.selectDate
+				});
+
+				// 同时更新orderDateTime用于显示
+				this.orderDateTime = `${this.selectDate} 23:00 ~ ${nextDate} 10:00`;
+			} else {
+				// 取消包夜选择
+				this.$emit('overnight-change', null);
+				this.orderDateTime = "暂无选择";
+			}
+		},
+		// 新增：清空时间选择
+		clearTimeSelection() {
+			this.timeActive = -1;
+			this.timeQuanBegin = "";
+			this.timeQuanEnd = "";
+			this.orderDateTime = "暂无选择";
+			this.orderTimeArr = {};
+
+			// 清空时间数组的选中状态
+			this.timeArr.forEach(item => {
+				item.isActive = false;
+				item.isInclude = false;
+			});
 		},
 		// 日期选择事件
 		selectDateEvent(index, item) {
@@ -315,6 +585,12 @@ export default {
 		},
 		// 普通时间选择事件
 		selectTimeEvent(index, item) {
+			// 选择普通时间时，取消包夜选择
+			if (this.isOvernightActive) {
+				this.isOvernightActive = false;
+				this.$emit('overnight-change', null);
+			}
+
 			if (this.isQuantum) {
 				return this.handleSelectQuantum(index, item);
 			}
@@ -337,12 +613,20 @@ export default {
 				this.$emit('change', time);
 			} else {
 				this.timeActive = index;
-				this.orderDateTime = `${this.selectDate} ${item.time}`;
+				// 核心修改6：显示选中时间时去掉秒数
+				const timeWithoutSeconds = item.time.slice(0, 5);
+				this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}`;
 				this.$emit('change', this.orderDateTime);
 			}
 		},
 		// 选择时间段
 		handleSection(index, item) {
+			// 选择时间段时，取消包夜选择
+			if (this.isOvernightActive) {
+				this.isOvernightActive = false;
+				this.$emit('overnight-change', null);
+			}
+
 			// 个人预约时段禁止点击修改
 			if (item.isMyAppoint || item.disable) return;
 
@@ -381,9 +665,14 @@ export default {
 					}
 				}
 				this.timeQuanEnd = item.time;
+
+				// 核心修改7：提交完整的时间段，从开始到结束
+				const startTime = `${this.selectDate} ${this.timeQuanBegin}`;
+				const endTime = `${this.selectDate} ${this.timeQuanEnd}`;
+
 				this.$emit('change', {
-					beginTime: `${this.selectDate} ${this.timeQuanBegin}`,
-					endTime: this.timeQuanEnd ? `${this.selectDate} ${this.timeQuanEnd}` : null,
+					beginTime: startTime,
+					endTime: endTime,
 				});
 				return;
 			}
@@ -397,6 +686,12 @@ export default {
 		},
 		// 选择量子时间
 		handleSelectQuantum(index, item) {
+			// 选择量子时间时，取消包夜选择
+			if (this.isOvernightActive) {
+				this.isOvernightActive = false;
+				this.$emit('overnight-change', null);
+			}
+
 			// 个人预约时段禁止点击修改
 			if (item.isMyAppoint || item.disable) return;
 
@@ -423,11 +718,29 @@ export default {
 			this.timeQuanBegin > this.timeQuanEnd && ([this.timeQuanBegin, this.timeQuanEnd] = [this.timeQuanEnd, this.timeQuanBegin])
 		},
 		handleSubmit() {
+			// 如果选择了包夜，优先触发包夜事件
+			if (this.isOvernightActive) {
+				const overnightStart = `${this.selectDate} 23:00:00`;
+				const nextDate = this.getNextDate(this.selectDate);
+				const overnightEnd = `${nextDate} 10:00:00`;
+
+				this.$emit('overnight-submit', {
+					start: overnightStart,
+					end: overnightEnd,
+					date: this.selectDate
+				});
+				return;
+			}
+
 			if (this.isSection) {
 				this.handleChange()
+				// 核心修改8：提交完整的时间段
+				const startTime = `${this.selectDate} ${this.timeQuanBegin}`;
+				const endTime = this.timeQuanEnd ? `${this.selectDate} ${this.timeQuanEnd}` : null;
+
 				this.$emit('change', {
-					beginTime: `${this.selectDate} ${this.timeQuanBegin}`,
-					endTime: this.timeQuanEnd ? `${this.selectDate} ${this.timeQuanEnd}` : null,
+					beginTime: startTime,
+					endTime: endTime,
 				})
 				return
 			}
@@ -446,11 +759,11 @@ export default {
 			} else {
 				this.$emit('change', this.orderDateTime)
 			}
-
 		}
 	}
 }
 </script>
+
 <style lang="scss" scoped>
 @import './pretty-times.scss';
 </style>
