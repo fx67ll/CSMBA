@@ -129,7 +129,6 @@ export default {
           }
         })
         .catch((res) => {
-          console.log(222, res);
           uni.showToast({
             title: res?.msg || "注册失败，请联系管理员！",
             icon: "none",

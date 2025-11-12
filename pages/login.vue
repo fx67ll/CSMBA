@@ -145,7 +145,6 @@ export default {
       this.$store
         .dispatch("Login", this.loginForm)
         .then((res) => {
-          console.log(111, res);
           if (!res) {
             self.loginSuccess();
           } else {
@@ -157,7 +156,6 @@ export default {
           }
         })
         .catch((res) => {
-          console.log(222, res);
           uni.showToast({
             title: res?.msg || "登录失败，请联系管理员！",
             icon: "none",

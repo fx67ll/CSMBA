@@ -15,7 +15,8 @@ export default {
   data() {
     return {
       userName: this.$store.state.user.name,
-      randomAvatar: "https://test.fx67ll.com/fx67ll-img-collection/fx67ll.jpg",
+      // randomAvatar: "https://test.fx67ll.com/fx67ll-img-collection/fx67ll.jpg",
+      randomAvatar: "/static/images/mahjong-app.jpg",
     };
   },
   onLoad() {

@@ -80,7 +80,7 @@ export default {
   },
   computed: {
     avatar() {
-      return this.$store.state.user.avatar;
+      return '/static/images/mahjong-app.jpg' || this.$store.state.user.avatar;
     },
     windowHeight() {
       return uni.getSystemInfoSync().windowHeight - 50;

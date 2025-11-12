@@ -76,7 +76,8 @@ const user = {
             // commit('SET_AVATAR', avatar);
 
             getAvatar('fx67ll').then(res => {
-              let avatar = !user || !user?.avatar ? 'https://test.fx67ll.com/fx67ll-img-collection/fx67ll.jpg' : baseUrl + user?.avatar;
+              // let avatar = !user || !user?.avatar ? 'https://test.fx67ll.com/fx67ll-img-collection/fx67ll.jpg' : baseUrl + user?.avatar;
+              let avatar = !user || !user?.avatar ? '/static/images/mahjong-app.jpg' : baseUrl + user?.avatar;
               if (username === 'user' && res?.avatar) {
                 avatar = 'data:image/gif;base64,' + res.avatar;
               }
