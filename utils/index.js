@@ -144,8 +144,6 @@ export function checkLotteryResult(lotteryType, recordNumStr, winNumStr) {
   const winningFrontNumbers = winNumStr.split('-')[0].split(',');
   const winningBackNumbers = winNumStr.split('-')[1].split(',');
 
-  // console.log(lotteryType, frontNumbers, backNumbers, winningFrontNumbers, winningBackNumbers);
-
   const result = {
     prizeLevel: 0,
     prizeText: '',
@@ -288,7 +286,6 @@ export function checkLotteryResult(lotteryType, recordNumStr, winNumStr) {
     }
   }
 
-  // console.log(result);
   return result;
 }
 

@@ -22,7 +22,6 @@ export default {
       const self = this;
       getMahjongRoomInfo()
         .then((res) => {
-          console.log('res', res);
           if (res?.code === 200) {
             let htmlContent = res?.data?.mahjongRoomDescription;
             // 给所有img标签添加样式，限制最大宽度为100%
