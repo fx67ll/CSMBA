@@ -32,11 +32,11 @@
                     <text class="label-text">棋牌室:</text>
                     <text class="value">{{ item.mahjongRoomName || '-' }}</text>
                   </view>
-                  <view class="detail-item">
+                  <!-- <view class="detail-item">
                     <text class="label icon-contact">📞</text>
                     <text class="label-text">联系方式:</text>
                     <text class="value">{{ item.reservationContact || '-' }}</text>
-                  </view>
+                  </view> -->
                   <!-- 新增：预约人数 -->
                   <view class="detail-item">
                     <text class="label icon-people">👥</text>
@@ -95,7 +95,7 @@ export default {
         //   },
         // },
         {
-          text: "修改备注",
+          text: "给商家留言",
           style: {
             backgroundColor: "#4096ff",
           },
