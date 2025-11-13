@@ -69,7 +69,7 @@
 					}" @click="selectOvernightEvent">
 						<view class="overnight-content">
 							<text class="overnight-title">包夜</text>
-							<text class="overnight-time">23:00 ~ 次日10:00</text>
+							<text class="overnight-time">23:00 ~ 次日09:59</text>
 							<text class="overnight-status">
 								{{ getOvernightStatusText() }}
 							</text>
@@ -185,13 +185,15 @@ export default {
 		disableTimeSlot: {
 			handler(val) {
 				this.initOnload()
-			}
+			},
+			deep: true
 		},
 		// 新增：监听个人预约时段变化，重新初始化
 		myAppointTimeSlot: {
 			handler(val) {
 				this.initOnload()
-			}
+			},
+			deep: true
 		},
 		// 新增：监听formParams变化，用于回显
 		formParams: {
@@ -245,28 +247,28 @@ export default {
 			const nextHourTimeStamp = nowTimeStamp + 3600000;
 			const nextHourTime = new Date(nextHourTimeStamp).toTimeString().slice(0, 8);
 
-			// 核心修改1：为时间段模式的时间项添加时间范围显示（去掉秒）
+			// 核心修改1：为时间段模式的时间项添加时间范围显示（改为 xx:00~xx:59 格式）
 			if (this.isSection && !this.isQuantum) {
 				this.timeArr.forEach((item, index) => {
 					const currentTime = item.time;
-					// 去掉秒数，只保留小时和分钟
+					// 去掉秒数，只保留小时和分钟（开始时间：xx:00）
 					const currentTimeWithoutSeconds = currentTime.slice(0, 5);
-					// 计算结束时间：当前时间 + 时间间隔
-					const currentTimeStamp = new Date(`2000-01-01 ${currentTime}`).getTime();
-					const endTimeStamp = currentTimeStamp + (this.timeInterval * 3600000);
-					const endTime = new Date(endTimeStamp).toTimeString().slice(0, 5);
-					// 添加时间范围属性（不带秒）
+					// 提取当前小时，拼接 ":59" 作为结束时间（显示用）
+					const currentHour = currentTime.slice(0, 2);
+					const endTime = `${currentHour}:59`;
+					// 添加时间范围属性（xx:00~xx:59）
 					item.timeRange = `${currentTimeWithoutSeconds}~${endTime}`;
 				});
 			} else if (!this.isQuantum) {
-				// 普通时间模式也添加时间范围显示（去掉秒）
+				// 普通时间模式也添加时间范围显示（改为 xx:00~xx:59 格式）
 				this.timeArr.forEach((item, index) => {
 					const currentTime = item.time;
-					// 去掉秒数，只保留小时和分钟
+					// 去掉秒数，只保留小时和分钟（开始时间：xx:00）
 					const currentTimeWithoutSeconds = currentTime.slice(0, 5);
-					const currentTimeStamp = new Date(`2000-01-01 ${currentTime}`).getTime();
-					const endTimeStamp = currentTimeStamp + (this.timeInterval * 3600000);
-					const endTime = new Date(endTimeStamp).toTimeString().slice(0, 5);
+					// 提取当前小时，拼接 ":59" 作为结束时间（显示用）
+					const currentHour = currentTime.slice(0, 2);
+					const endTime = `${currentHour}:59`;
+					// 添加时间范围属性（xx:00~xx:59）
 					item.timeRange = `${currentTimeWithoutSeconds}~${endTime}`;
 				});
 			}
@@ -377,9 +379,10 @@ export default {
 			this.timeActive = -1
 			for (let i = 0, len = this.timeArr.length; i < len; i++) {
 				if (!this.timeArr[i].disable && !this.timeArr[i].isMyAppoint) {
-					// 核心修改5：显示时间时去掉秒数
+					// 核心修改5：显示时间时去掉秒数（开始时间），结束时间显示为 xx:59
+					const currentHour = this.timeArr[i].time.slice(0, 2);
 					const timeWithoutSeconds = this.timeArr[i].time.slice(0, 5);
-					this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}`
+					this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}~${currentHour}:59`
 					this.timeActive = i
 					return
 				}
@@ -400,9 +403,11 @@ export default {
 				return;
 			}
 
-			// 解析开始和结束时间
-			const startHour = startTime.split(' ')[1].slice(0, 5);
-			const endHour = endTime.split(' ')[1].slice(0, 5);
+			// 解析开始和结束时间（实际提交的时间不变，仅显示修改）
+			const startHour = startTime.split(' ')[1].slice(0, 2);
+			const startHourMin = startTime.split(' ')[1].slice(0, 5);
+			// 显示用结束时间改为 startHour:59（实际提交的 endTime 不变）
+			const displayEndTime = `${startHour}:59`;
 
 			// 找到开始和结束时间对应的索引
 			let startIndex = -1;
@@ -410,10 +415,11 @@ export default {
 
 			this.timeArr.forEach((item, index) => {
 				const itemTime = item.time.slice(0, 5);
-				if (itemTime === startHour) {
+				if (itemTime === startHourMin) {
 					startIndex = index;
 				}
-				if (itemTime === endHour) {
+				// 结束时间索引匹配实际提交的 endTime（确保选中状态正确）
+				if (item.time.slice(0, 5) === endTime.split(' ')[1].slice(0, 5)) {
 					endIndex = index;
 				}
 			});
@@ -429,8 +435,8 @@ export default {
 					this.timeArr[i].isInclude = true;
 				}
 
-				// 更新显示的时间段
-				this.orderDateTime = `${this.selectDate} ${startHour} ~ ${endHour}`;
+				// 核心修改6：回显时显示为 xx:00~xx:59 格式
+				this.orderDateTime = `${this.selectDate} ${startHourMin} ~ ${displayEndTime}`;
 			}
 		},
 		// 新增：获取包夜状态文本
@@ -613,9 +619,10 @@ export default {
 				this.$emit('change', time);
 			} else {
 				this.timeActive = index;
-				// 核心修改6：显示选中时间时去掉秒数
+				// 核心修改7：显示选中时间时改为 xx:00~xx:59 格式（实际提交的时间不变）
+				const currentHour = item.time.slice(0, 2);
 				const timeWithoutSeconds = item.time.slice(0, 5);
-				this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}`;
+				this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}~${currentHour}:59`;
 				this.$emit('change', this.orderDateTime);
 			}
 		},
@@ -666,9 +673,15 @@ export default {
 				}
 				this.timeQuanEnd = item.time;
 
-				// 核心修改7：提交完整的时间段，从开始到结束
+				// 核心修改8：提交完整的时间段（实际时间不变），显示时改为 xx:00~xx:59
 				const startTime = `${this.selectDate} ${this.timeQuanBegin}`;
 				const endTime = `${this.selectDate} ${this.timeQuanEnd}`;
+				const startHour = this.timeQuanBegin.slice(0, 2);
+				const startHourMin = this.timeQuanBegin.slice(0, 5);
+				const displayEndTime = `${startHour}:59`;
+
+				// 更新显示文本
+				this.orderDateTime = `${this.selectDate} ${startHourMin} ~ ${displayEndTime}`;
 
 				this.$emit('change', {
 					beginTime: startTime,
@@ -707,9 +720,13 @@ export default {
 				this.$emit('change', this.orderTimeArr);
 			} else {
 				this.timeActive = index;
+				// 核心修改9：量子时间模式显示改为 xx:00~xx:59（实际提交的时间不变）
+				const displayEndTime = `${cur.begin.slice(0, 2)}:59`;
 				this.orderDateTime = {
 					begin: `${this.selectDate} ${item.begin}:00`,
 					end: `${this.selectDate} ${item.end}:00`,
+					// 新增显示用属性（不影响提交）
+					displayText: `${item.begin}:00~${displayEndTime}`
 				};
 				this.$emit('change', this.orderDateTime);
 			}
@@ -734,7 +751,7 @@ export default {
 
 			if (this.isSection) {
 				this.handleChange()
-				// 核心修改8：提交完整的时间段
+				// 核心修改10：提交完整的时间段（实际时间不变）
 				const startTime = `${this.selectDate} ${this.timeQuanBegin}`;
 				const endTime = this.timeQuanEnd ? `${this.selectDate} ${this.timeQuanEnd}` : null;
 

@@ -1,7 +1,15 @@
 <template>
   <view class="fx67ll-log-box">
+    <!-- 完善：添加初始加载占位（可选，增强用户感知） -->
+    <view v-if="isInitLoading" class="init-loading">
+      <uni-loading type="circle" size="40rpx"></uni-loading>
+      <text class="loading-text">加载订单数据中...</text>
+    </view>
+
     <z-paging-mini ref="paging" :default-page-size="100" back-to-top-bottom="1rpx" :auto-show-back-to-top="true"
-      v-model="logList" @query="queryLogList">
+      v-model="logList" @query="queryLogList" :loading-text="'加载中...'" :load-more-end-text="'暂无更多订单'"
+      :load-more-fail-text="'加载失败，点击重试'" :pull-refresh-text="{ loading: '刷新中...', release: '释放刷新', ready: '下拉刷新' }"
+      :is-show-loading="true" :is-show-load-more="true">
       <uni-swipe-action>
         <view class="fx67ll-log-item" v-for="item in logList" :key="item.mahjongReservationLogId">
           <uni-swipe-action-item :left-options="leftActionOptions"
@@ -20,7 +28,7 @@
                 <view class="reservation-time-container" :class="getStatusClass(item.reservationStatus)">
                   <text class="icon-clock">⏱️</text>
                   <text class="reservation-time-text">
-                    {{ formatHourMinute(item.reservationStartTime) }} - {{ formatHourMinute(item.reservationEndTime) }}
+                    {{ formatHourMinute(item.reservationStartTime) }} - {{ formatEndHourMinute(item.reservationEndTime) }}
                   </text>
                   <text class="reservation-duration">
                     时长: {{ calculateDuration(item.reservationStartTime, item.reservationEndTime) }}
@@ -85,8 +93,7 @@ export default {
         reservationStatus: '',
         isNeedAll: false,
       },
-      leftActionOptions: [
-      ],
+      leftActionOptions: [],
       rightActionOptions: [
         // {
         //   text: "关闭",
@@ -109,6 +116,8 @@ export default {
       ],
       isShowDrawer: false,
       editLogInfo: {},
+      // 完善：新增初始加载状态标记
+      isInitLoading: true
     };
   },
   onShow() {
@@ -118,9 +127,12 @@ export default {
     // 强制刷新列表
     reloadMahjongReservationLogList() {
       if (this.$refs.paging) {
+        // 完善：下拉刷新时显示刷新动画
         this.$refs.paging.refresh();
       }
-      this.queryLogList();
+      // 完善：刷新时重置初始加载状态（若需要）
+      this.isInitLoading = true;
+      this.queryLogList(1, this.queryParams.pageSize);
     },
     // 生成订单编号（创建时间戳 + mahjongReservationLogId）
     getOrderNo(item) {
@@ -141,11 +153,19 @@ export default {
       const date = new Date(timeStr);
       return `${date.getFullYear()} -${this.padZero(date.getMonth() + 1)} -${this.padZero(date.getDate())} `;
     },
-    // 单独格式化时分
+    // 单独格式化时分（开始时间，正常显示）
     formatHourMinute(timeStr) {
       if (!timeStr) return '-';
       const date = new Date(timeStr);
       return `${this.padZero(date.getHours())}:${this.padZero(date.getMinutes())} `;
+    },
+    // 新增：格式化结束时间（显示为 xx:59，真实数据不变）
+    formatEndHourMinute(timeStr) {
+      if (!timeStr) return '-';
+      const date = new Date(timeStr);
+      const hour = this.padZero(date.getHours());
+      // 固定显示为 59 分，真实数据仍为原时间
+      return `${hour}:59 `;
     },
     // 数字补零
     padZero(num) {
@@ -169,7 +189,7 @@ export default {
       };
       return statusClassMap[status] || '';
     },
-    // 计算预约时长
+    // 计算预约时长（基于真实时间，不受显示格式影响）
     calculateDuration(startTime, endTime) {
       if (!startTime || !endTime) return '-';
       const start = new Date(startTime).getTime();
@@ -178,11 +198,15 @@ export default {
       const minute = Math.floor(((end - start) % 3600000) / 60000);
       return hour > 0 ? `${hour}小时${minute > 0 ? minute + '分' : ''} ` : `${minute} 分钟`;
     },
-    // 查询预约订单记录列表
+    // 查询预约订单记录列表（完善加载状态逻辑）
     queryLogList(pageNum, pageSize) {
       const self = this;
 
+      // 完善：参数校验，避免无效请求
       if (!pageNum || !pageSize) {
+        // 通知组件加载完成（防止动画一直转）
+        if (this.$refs.paging) this.$refs.paging.complete(false);
+        this.isInitLoading = false;
         return;
       }
 
@@ -195,22 +219,31 @@ export default {
       listMahjongReservationLog(self.queryParams)
         .then((res) => {
           if (res?.code === 200) {
-            if (res?.rows && res?.rows?.length > 0) {
-              self.$refs.paging.complete(res.rows);
-            } else {
-              self.$refs.paging.complete([]);
-            }
+            const data = res?.rows || [];
+            // 完善：通知分页组件加载完成，传入数据
+            self.$refs.paging.complete(data);
+            // 完善：初始加载完成，隐藏占位
+            self.isInitLoading = false;
           } else {
             uni.showToast({
               title: "查询预约订单记录失败！",
               icon: "none",
               duration: 1998,
             });
+            // 完善：通知组件加载失败，允许重试
             self.$refs.paging.complete(false);
+            self.isInitLoading = false;
           }
         })
         .catch((res) => {
+          uni.showToast({
+            title: "查询预约订单记录失败！",
+            icon: "none",
+            duration: 1998,
+          });
+          // 完善：通知组件加载失败，允许重试
           self.$refs.paging.complete(false);
+          self.isInitLoading = false;
         });
     },
     // 编辑预约订单记录
@@ -224,7 +257,9 @@ export default {
       this.isShowDrawer = val;
       // 重新加载列表
       if (type === 1 || type === 2) {
-        this.queryLogList();
+        // 完善：刷新时显示加载状态
+        this.isInitLoading = true;
+        this.queryLogList(1, this.queryParams.pageSize);
         this.$refs.paging.reload();
       }
     },
@@ -243,14 +278,19 @@ export default {
           cancelText: '取消',
           success: (modalRes) => {
             if (modalRes.confirm) {
+              // 完善：取消订单时显示加载状态
+              uni.showLoading({ title: '处理中...', mask: true });
               const formParams = {
                 ...record,
                 reservationStatus: 1,
               }
               editMahjongReservationLog(formParams)
                 .then((res) => {
+                  uni.hideLoading();
                   if (res?.code === 200) {
-                    self.queryLogList();
+                    // 完善：刷新列表时显示加载状态
+                    self.isInitLoading = true;
+                    self.queryLogList(1, self.queryParams.pageSize);
                     self.$refs.paging.refresh();
                     uni.showToast({
                       title: "取消预约订单成功！",
@@ -266,6 +306,7 @@ export default {
                   }
                 })
                 .catch((res) => {
+                  uni.hideLoading();
                   uni.showToast({
                     title: "取消预约订单失败！",
                     icon: "none",
@@ -292,6 +333,25 @@ export default {
 .fx67ll-log-box {
   padding: 16rpx;
   background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+// 完善：初始加载占位样式
+.init-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+  z-index: 99;
+
+  .loading-text {
+    font-size: 28rpx;
+    color: @gray-color;
+  }
 }
 
 .fx67ll-log-item {
@@ -362,7 +422,6 @@ export default {
 
 // 已预约状态颜色统一
 .status-reserved {
-
   color: @completed-color !important;
   background: rgba(46, 204, 113, 0.1);
 
@@ -464,5 +523,13 @@ export default {
 .icon-create,
 .icon-note {
   font-size: 26rpx;
+}
+
+// 完善：调整z-paging-mini默认样式，适配页面
+.z-paging-mini {
+  --z-paging-loading-color: @reserved-color;
+  --z-paging-text-color: @gray-color;
+  --z-paging-font-size: 24rpx;
+  padding-bottom: 20rpx;
 }
 </style>

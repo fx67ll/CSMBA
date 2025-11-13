@@ -262,6 +262,8 @@ export default {
     // 新增：统一的提交方法
     submitReservation() {
       const self = this;
+      // 提交预约时显示加载状态
+      this.loading = true;
       this.formParams.reservationEndTime = moment(self.formParams.reservationEndTime).add(1, 'h').format('YYYY-MM-DD HH:mm:ss');
       addMahjongReservationLog(self.formParams)
         .then((res) => {
@@ -284,6 +286,9 @@ export default {
               icon: "none",
               duration: 1998,
             });
+            // 提交失败后刷新当前预约记录
+            this.queryLogList(true);
+            this.queryLogList(false);
           }
         })
         .catch((res) => {
@@ -292,6 +297,13 @@ export default {
             icon: "none",
             duration: 1998,
           });
+          // 提交失败后刷新当前预约记录
+          this.queryLogList(true);
+          this.queryLogList(false);
+        })
+        .finally(() => {
+          // 提交完成（成功/失败）后隐藏加载状态
+          this.loading = false;
         });
     }
   },
