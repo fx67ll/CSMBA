@@ -28,7 +28,8 @@
                 <view class="reservation-time-container" :class="getStatusClass(item.reservationStatus)">
                   <text class="icon-clock">⏱️</text>
                   <text class="reservation-time-text">
-                    {{ formatHourMinute(item.reservationStartTime) }} - {{ formatEndHourMinute(item.reservationEndTime) }}
+                    {{ formatHourMinute(item.reservationStartTime) }} - {{ formatEndHourMinute(item.reservationEndTime)
+                    }}
                   </text>
                   <text class="reservation-duration">
                     时长: {{ calculateDuration(item.reservationStartTime, item.reservationEndTime) }}
@@ -159,13 +160,17 @@ export default {
       const date = new Date(timeStr);
       return `${this.padZero(date.getHours())}:${this.padZero(date.getMinutes())} `;
     },
-    // 新增：格式化结束时间（显示为 xx:59，真实数据不变）
+    // 新增：格式化结束时间（显示为 (原小时-1):59，真实数据不变）
     formatEndHourMinute(timeStr) {
       if (!timeStr) return '-';
       const date = new Date(timeStr);
-      const hour = this.padZero(date.getHours());
+      // 核心修正：获取原结束时间的小时，减去1作为显示用小时
+      const originalHour = date.getHours();
+      const displayHour = originalHour - 1;
+      // 补零处理（确保格式正确，如 9 → 09，10 → 10）
+      const paddedHour = this.padZero(displayHour);
       // 固定显示为 59 分，真实数据仍为原时间
-      return `${hour}:59 `;
+      return `${paddedHour}:59 `;
     },
     // 数字补零
     padZero(num) {
