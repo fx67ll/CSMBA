@@ -11,9 +11,9 @@
         <uni-forms-item label="联系方式" name="contactInfo" required>
           <uni-easyinput v-model="user.contactInfo" placeholder="请输入联系方式" />
         </uni-forms-item>
-        <uni-forms-item label="电子邮箱" name="email" required>
+        <!-- <uni-forms-item label="电子邮箱" name="email" required>
           <uni-easyinput v-model="user.email" placeholder="请输入电子邮箱" />
-        </uni-forms-item>
+        </uni-forms-item> -->
       </uni-forms>
     </view>
     <button class="fx67ll-info-btn" type="primary" @click="submit">提交</button>
@@ -30,7 +30,7 @@ export default {
       user: {
         nickName: "",
         contactInfo: "",
-        email: "",
+        // email: "",
         sex: "",
       },
       sexs: [
@@ -60,18 +60,18 @@ export default {
             },
           ],
         },
-        email: {
-          rules: [
-            {
-              required: true,
-              errorMessage: "邮箱地址不能为空",
-            },
-            {
-              format: "email",
-              errorMessage: "请输入正确的邮箱地址",
-            },
-          ],
-        },
+        // email: {
+        //   rules: [
+        //     {
+        //       required: true,
+        //       errorMessage: "邮箱地址不能为空",
+        //     },
+        //     {
+        //       format: "email",
+        //       errorMessage: "请输入正确的邮箱地址",
+        //     },
+        //   ],
+        // },
       },
     };
   },
