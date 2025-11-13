@@ -7,8 +7,8 @@
         :rightText="userSex || '-'" />
       <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'phone-filled' }" title="联系方式"
         :rightText="user.contactInfo || '-'" />
-      <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'email-filled' }" title="电子邮箱"
-        :rightText="user.email || '-'" />
+      <!-- <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'email-filled' }" title="电子邮箱"
+        :rightText="user.email || '-'" /> -->
       <!-- <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'flag-filled' }" title="岗位"
         :rightText="postGroup || '-'" /> -->
       <uni-list-item showExtraIcon="true" :extraIcon="{ type: 'auth-filled' }" title="角色"
