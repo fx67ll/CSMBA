@@ -15,7 +15,7 @@
       @overnight-change="handleOvernightChange" @overnight-submit="handleOvernightSubmit">
     </prettyTimes>
 
-    <!-- 新增：底部提交按钮容器 -->
+    <!-- 优化：底部提交按钮容器（放入文档流，适配安全区域） -->
     <view class="submit-btn-container">
       <button class="submit-btn" @click="handleSubmitReservation">提交预约</button>
     </view>
@@ -313,20 +313,28 @@ export default {
 <style lang="scss">
 page {
   background-color: #ffffff;
+  padding-bottom: 220rpx;
+  // min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* 新增：提交按钮容器（固定定位到底部） */
+.fx67ll-reservation-box {
+  /* 优化：确保容器占满页面，按钮自然下沉到文档流底部 */
+  width: 100%;
+  // min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 优化：提交按钮容器（放入文档流，通过margin-top自动填充剩余空间） */
 .submit-btn-container {
-  position: fixed;
-  bottom: 100rpx;
-  left: 0;
-  right: 0;
+  width: 100%;
   padding: 20rpx 30rpx;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05); // 加底部阴影区分层级
-  z-index: 99; // 确保按钮在最上层，不被其他元素遮挡
+  padding-bottom: 220rpx;
+  box-sizing: border-box;
 }
 
-/* 新增：提交按钮样式 */
+/* 新增：提交按钮样式（保持原有样式不变） */
 .submit-btn {
   width: 100%;
   height: 80rpx;
@@ -337,7 +345,7 @@ page {
   border-radius: 40rpx; // 圆角样式
 }
 
-/* 新增：全局遮罩层样式 */
+/* 新增：全局遮罩层样式（保持原有样式不变） */
 .loading-mask {
   position: fixed;
   top: 0;
