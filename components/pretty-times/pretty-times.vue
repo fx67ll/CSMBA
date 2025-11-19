@@ -300,10 +300,19 @@ export default {
 
 					// 再判断普通禁用时段（个人预约时段不受此影响）
 					if (!item.isMyAppoint) {
-						for (let time of this.disableTimeSlot) {
-							const [begin_time = "", end_time = ""] = time
-							if (begin_time && end_time && (begin_time <= cur_be_time && cur_end_time <= end_time)) {
-								item.disable = true
+						// 增加disableTimeSlot空数组判断
+						if (this.disableTimeSlot && this.disableTimeSlot.length > 0) {
+							for (let time of this.disableTimeSlot) {
+								const [begin_time = "", end_time = ""] = time
+								// 增加时间格式校验
+								if (!begin_time || !end_time ||
+									isNaN(new Date(begin_time).getTime()) ||
+									isNaN(new Date(end_time).getTime())) {
+									continue;
+								}
+								if (begin_time <= cur_be_time && cur_end_time <= end_time) {
+									item.disable = true
+								}
 							}
 						}
 						// 核心修改3：当日过期判断，标记isExpired
@@ -324,7 +333,17 @@ export default {
 
 				} else {
 					// 普通时间模式
-					const cur_time = `${this.selectDate} ${item.time}`
+					// 增加item.time格式校验
+					if (!item.time || item.time.length < 8) {
+						item.disable = true;
+						return;
+					}
+					const cur_time = `${this.selectDate} ${item.time}`;
+					// 增加cur_time格式校验
+					if (isNaN(new Date(cur_time).getTime())) {
+						item.disable = true;
+						return;
+					}
 
 					// 优先判断是否为个人预约时段
 					for (let time of this.myAppointTimeSlot) {
@@ -337,22 +356,37 @@ export default {
 
 					// 再判断普通禁用逻辑（个人预约时段不受此影响）
 					if (!item.isMyAppoint) {
-						// 普通预约禁用（约满）
-						this.appointTime.forEach(t => {
-							let [date, time] = t.split(' ')
-							if (date == this.selectDate && item.time == time) {
-								item.disable = true
-							}
-						})
-						// 禁用时间段（约满）
-						for (let time of this.disableTimeSlot) {
-							const [begin_time = "", end_time = ""] = time
-							if (begin_time && end_time && (begin_time <= cur_time && cur_time <= end_time)) {
-								item.disable = true
+						// 调整顺序：先处理时间段禁用（disableTimeSlot）
+						if (this.disableTimeSlot && this.disableTimeSlot.length > 0) {
+							for (let time of this.disableTimeSlot) {
+								const [begin_time = "", end_time = ""] = time
+								if (!begin_time || !end_time ||
+									isNaN(new Date(begin_time).getTime()) ||
+									isNaN(new Date(end_time).getTime())) {
+									continue;
+								}
+								if (begin_time <= cur_time && cur_time <= end_time) {
+									item.disable = true;
+									break; // 匹配到一个禁用时段即可
+								}
 							}
 						}
+
+						// 再处理普通预约禁用（约满）
+						if (!item.disable) {
+							this.appointTime.forEach(t => {
+								let [date, time] = t.split(' ');
+								if (!date || !time || date !== this.selectDate) {
+									return;
+								}
+								if (item.time === time) {
+									item.disable = true;
+								}
+							});
+						}
+
 						// 核心修改4：当日过期判断，标记isExpired
-						if (this.selectDate == this.nowDate && nextHourTime > item.time) {
+						if (!item.disable && this.selectDate == this.nowDate && nextHourTime > item.time) {
 							item.disable = true
 							item.isExpired = true // 标记为过期时间
 						}
@@ -374,7 +408,15 @@ export default {
 				}
 			})
 
-			// 默认时间选中逻辑
+			// 重新计算isFullTime（确保基于完整的状态）
+			isFullTime = true;
+			this.timeArr.forEach(item => {
+				if (!item.disable && !item.isMyAppoint) {
+					isFullTime = false;
+				}
+			});
+
+			// 默认时间选中逻辑（修复：用break代替return，避免中断遍历）
 			this.orderDateTime = isFullTime ? "暂无选择" : this.selectDate
 			this.timeActive = -1
 			for (let i = 0, len = this.timeArr.length; i < len; i++) {
@@ -384,7 +426,7 @@ export default {
 					const timeWithoutSeconds = this.timeArr[i].time.slice(0, 5);
 					this.orderDateTime = `${this.selectDate} ${timeWithoutSeconds}~${currentHour}:59`
 					this.timeActive = i
-					return
+					break; // 用break代替return，确保后续逻辑执行
 				}
 			}
 		},
@@ -488,15 +530,17 @@ export default {
 
 			// 检查是否是已约满（被其他人预约）
 			if (!this.isOvernightMyAppoint && !this.isOvernightExpired) {
-				for (let time of this.disableTimeSlot) {
-					const [begin_time = "", end_time = ""] = time;
-					if (begin_time && end_time) {
-						// 如果包夜时间段与任何禁用时间段有重叠，则禁用包夜
-						if ((begin_time <= overnightStart && overnightStart < end_time) ||
-							(begin_time < overnightEnd && overnightEnd <= end_time) ||
-							(overnightStart <= begin_time && end_time <= overnightEnd)) {
-							this.isOvernightDisabled = true;
-							break;
+				if (this.disableTimeSlot && this.disableTimeSlot.length > 0) {
+					for (let time of this.disableTimeSlot) {
+						const [begin_time = "", end_time = ""] = time;
+						if (begin_time && end_time) {
+							// 如果包夜时间段与任何禁用时间段有重叠，则禁用包夜
+							if ((begin_time <= overnightStart && overnightStart < end_time) ||
+								(begin_time < overnightEnd && overnightEnd <= end_time) ||
+								(overnightStart <= begin_time && end_time <= overnightEnd)) {
+								this.isOvernightDisabled = true;
+								break;
+							}
 						}
 					}
 				}
@@ -721,7 +765,7 @@ export default {
 			} else {
 				this.timeActive = index;
 				// 核心修改9：量子时间模式显示改为 xx:00~xx:59（实际提交的时间不变）
-				const displayEndTime = `${cur.begin.slice(0, 2)}:59`;
+				const displayEndTime = `${item.begin.slice(0, 2)}:59`;
 				this.orderDateTime = {
 					begin: `${this.selectDate} ${item.begin}:00`,
 					end: `${this.selectDate} ${item.end}:00`,
@@ -776,6 +820,36 @@ export default {
 			} else {
 				this.$emit('change', this.orderDateTime)
 			}
+		},
+		// 新增：主动清除所有选中状态（供父组件调用）
+		clearSelected() {
+			// // 1. 重置日期选中
+			// this.dateActive = 0;
+			// this.selectDate = this.nowDate;
+
+			// 2. 重置时间选中（覆盖所有模式）
+			this.timeActive = -1;
+			this.timeQuanBegin = "";
+			this.timeQuanEnd = "";
+			this.timeQuanBeginIndex = 0;
+			this.orderDateTime = "暂无选择";
+			this.orderTimeArr = {};
+
+			// 3. 重置时间项状态
+			this.timeArr.forEach(item => {
+				item.isActive = false;
+				item.isInclude = false;
+			});
+
+			// 4. 重置包夜选中状态
+			this.isOvernightActive = false;
+			this.$emit('overnight-change', null); // 通知父组件取消包夜
+
+			// 5. 重新初始化时间数据（确保状态同步）
+			this.initOnload();
+
+			// 6. 通知父组件选中状态已清空
+			this.$emit('clear', true);
 		}
 	}
 }

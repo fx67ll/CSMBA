@@ -1,13 +1,14 @@
 <template>
   <view class="fx67ll-reservation-box">
     <!-- 新增：全局遮罩层 -->
-    <view v-if="loading" class="loading-mask">
+    <view v-if="loading || !isDataLoaded" class="loading-mask">
       <view class="loading-content">
         <text class="loading-text">加载数据中...</text>
       </view>
     </view>
 
-    <prettyTimes ref="prettyTimes" :showOvernight="appointConfig.showOvernight"
+    <!-- 新增：添加v-if控制，等待两次请求完成后再渲染子组件 -->
+    <prettyTimes v-if="isDataLoaded" ref="prettyTimes" :showOvernight="appointConfig.showOvernight"
       :beginTime="appointConfig.allowBeginTime" :endTime="appointConfig.allowEndTime"
       :timeInterval="appointConfig.allowTimeInterval" :appointTime="appointConfig.appointTime" :isSection="true"
       :disableTimeSlot="appointConfig.disableTimeSlot" :myAppointTimeSlot="appointConfig.myAppointTimeSlot"
@@ -44,7 +45,7 @@ export default {
         allowBeginTime: "10:00:00",
         allowEndTime: "22:00:00",
         allowTimeInterval: 1,
-        appointTime: ["2022-02-10 15:30:00"],
+        appointTime: [],
         disableTimeSlot: [],
         myAppointTimeSlot: []
       },
@@ -68,7 +69,9 @@ export default {
       // 新增：防抖函数实例
       debouncedSubmitReservation: null,
       // 新增：加载状态
-      loading: false
+      loading: false,
+      // 新增：标记两次请求是否都完成
+      isDataLoaded: false
     };
   },
   onShow() {
@@ -89,14 +92,39 @@ export default {
     this.queryParams.reservationDate = today.replace(/-/g, ""); // 转为后端需要的 YYYYMMDD 格式
     this.queryParams.pageNum = 1;
     this.queryParams.pageSize = 999;
-    // 4. 首次加载数据
-    this.queryLogList(true);
-    this.queryLogList(false);
 
-    // 新增：初始化防抖函数
+    // 4. 初始化防抖函数
     this.debouncedSubmitReservation = _.debounce(this._realHandleSubmitReservation, 500, true);
+
+    // 5. 首次加载数据：等待两次请求都完成后再标记数据加载完成
+    this.initData();
   },
   methods: {
+    // 新增：初始化数据方法，等待两次queryLogList请求完成
+    async initData() {
+      this.loading = true;
+      try {
+        // 等待两次查询请求都完成
+        await Promise.all([
+          this.queryLogList(true),
+          this.queryLogList(false)
+        ]);
+        // 两次请求都完成后，标记数据加载完成，渲染子组件
+        this.isDataLoaded = true;
+      } catch (error) {
+        // 异常处理：即使有请求失败，也标记加载完成，避免页面卡死
+        this.isDataLoaded = true;
+        this.clearLogList();
+        uni.showToast({
+          title: "初始化数据失败！",
+          icon: "none",
+          duration: 1998,
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // 子组件渲染完成后，同步初始日期到父组件 nowDateInfo
     handleComponentReady() {
       // 子组件的 dateArr 是生成的日期列表，取第一个（默认选中的当日）
@@ -114,61 +142,78 @@ export default {
       this.appointConfig.disableTimeSlot = [];
       this.appointConfig.myAppointTimeSlot = [];
     },
-    // 查询预约历史记录
+    // 查询预约历史记录 - 修改为返回Promise
     queryLogList(isNeedAll = true) {
       const self = this;
 
-      // 新增：开始查询时显示加载状态
-      this.loading = true;
+      // 新增：开始查询时显示加载状态（如果还没显示的话）
+      if (!this.loading) {
+        this.loading = true;
+      }
 
       this.queryParams.pageNum = 1;
       this.queryParams.pageSize = 999;
       this.queryParams.isNeedAll = isNeedAll;
-      listMahjongReservationLog(self.queryParams)
-        .then((res) => {
-          if (res?.code === 200) {
-            if (res?.rows && res?.rows?.length > 0) {
-              self.logList = res?.rows || [];
-              const targetTimeSlot = (res?.rows || [])
-                // 第一步：过滤出 reservationStatus 等于 '0' 的数据
-                ?.filter(item => item.reservationStatus === '0')
-                // 第二步：对过滤后的数据处理时间，生成禁用时间段
-                ?.map(item => {
-                  const startTime = moment(item.reservationStartTime).format('YYYY-MM-DD HH:mm:ss');
-                  let endTime = moment(item.reservationEndTime);
-                  const currentTime = moment();
-                  // 如果结束时间晚于当前时间前1小时，则调整为当前时间前1小时
-                  if (endTime.isAfter(currentTime.subtract(1, 'hours'))) {
-                    endTime = endTime.subtract(1, 'hours');
-                  }
-                  return [startTime, endTime.format('YYYY-MM-DD HH:mm:ss')];
-                }) || [];
 
-              // 根据查询类型更新对应配置
-              if (isNeedAll) {
-                this.appointConfig.disableTimeSlot = targetTimeSlot;
+      // 返回Promise，便于外部等待
+      return new Promise((resolve, reject) => {
+        listMahjongReservationLog(self.queryParams)
+          .then((res) => {
+            if (res?.code === 200) {
+              if (res?.rows && res?.rows?.length > 0) {
+                self.logList = res?.rows || [];
+                const targetTimeSlot = (res?.rows || [])
+                  // 第一步：过滤出 reservationStatus 等于 '0' 的数据
+                  ?.filter(item => item.reservationStatus === '0')
+                  // 第二步：对过滤后的数据处理时间，生成禁用时间段
+                  ?.map(item => {
+                    const startTime = moment(item.reservationStartTime).format('YYYY-MM-DD HH:mm:ss');
+                    let endTime = moment(item.reservationEndTime);
+                    const currentTime = moment();
+                    // 如果结束时间晚于当前时间前1小时，则调整为当前时间前1小时
+                    if (endTime.isAfter(currentTime.subtract(1, 'hours'))) {
+                      endTime = endTime.subtract(1, 'hours');
+                    }
+                    return [startTime, endTime.format('YYYY-MM-DD HH:mm:ss')];
+                  }) || [];
+
+                // 根据查询类型更新对应配置
+                if (isNeedAll) {
+                  this.appointConfig.disableTimeSlot = targetTimeSlot;
+                } else {
+                  this.appointConfig.myAppointTimeSlot = targetTimeSlot;
+                }
               } else {
-                this.appointConfig.myAppointTimeSlot = targetTimeSlot;
+                // 只有当isNeedAll为true时才清空（避免两次请求互相清空）
+                if (isNeedAll) {
+                  self.clearLogList();
+                }
               }
+              resolve(res);
             } else {
+              // 只有当isNeedAll为true时才清空（避免两次请求互相清空）
+              if (isNeedAll) {
+                self.clearLogList();
+              }
+              uni.showToast({
+                title: "查询预约订单记录失败！",
+                icon: "none",
+                duration: 1998,
+              });
+              resolve(res); // 即使失败也resolve，让Promise.all能继续执行
+            }
+          })
+          .catch((res) => {
+            // 只有当isNeedAll为true时才清空（避免两次请求互相清空）
+            if (isNeedAll) {
               self.clearLogList();
             }
-          } else {
-            self.clearLogList();
-            uni.showToast({
-              title: "查询预约订单记录失败！",
-              icon: "none",
-              duration: 1998,
-            });
-          }
-        })
-        .catch((res) => {
-          self.clearLogList();
-        })
-        .finally(() => {
-          // 新增：查询完成后隐藏加载状态
-          this.loading = false;
-        });
+            reject(res);
+          })
+          .finally(() => {
+            // 只有当两次请求都完成后才隐藏加载状态（在initData的finally中处理）
+          });
+      });
     },
     // 新增：包夜变化事件处理
     handleOvernightChange(overnightData) {
@@ -215,8 +260,15 @@ export default {
       const dateStr = dateInfo?.selectedDate?.replace(/-/g, "") || '';
       this.queryParams.isNeedAll = true;
       this.queryParams.reservationDate = dateStr;
-      this.queryLogList(true);
-      this.queryLogList(false);
+
+      // 日期切换时也等待两次请求完成
+      this.loading = true;
+      Promise.all([
+        this.queryLogList(true),
+        this.queryLogList(false)
+      ]).finally(() => {
+        this.loading = false;
+      });
     },
     // 提交预约 - 添加防抖处理
     handleSubmitReservation() {
@@ -268,17 +320,21 @@ export default {
       addMahjongReservationLog(self.formParams)
         .then((res) => {
           if (res?.code === 200) {
-            this.queryLogList(true);
-            this.queryLogList(false);
-            // 重置表单
-            this.formParams.reservationStartTime = null;
-            this.formParams.reservationEndTime = null;
-            this.isOvernightSelected = false;
+            // 提交成功后刷新数据，等待两次请求完成
+            Promise.all([
+              this.queryLogList(true),
+              this.queryLogList(false)
+            ]).then(() => {
+              // 重置表单
+              this.formParams.reservationStartTime = null;
+              this.formParams.reservationEndTime = null;
+              this.isOvernightSelected = false;
 
-            uni.showToast({
-              title: "提交预约订单成功！",
-              icon: "none",
-              duration: 1998,
+              uni.showToast({
+                title: "提交预约订单成功！",
+                icon: "none",
+                duration: 1998,
+              });
             });
           } else {
             uni.showToast({
@@ -287,8 +343,10 @@ export default {
               duration: 1998,
             });
             // 提交失败后刷新当前预约记录
-            this.queryLogList(true);
-            this.queryLogList(false);
+            Promise.all([
+              this.queryLogList(true),
+              this.queryLogList(false)
+            ]);
           }
         })
         .catch((res) => {
@@ -298,12 +356,16 @@ export default {
             duration: 1998,
           });
           // 提交失败后刷新当前预约记录
-          this.queryLogList(true);
-          this.queryLogList(false);
+          Promise.all([
+            this.queryLogList(true),
+            this.queryLogList(false)
+          ]);
         })
         .finally(() => {
           // 提交完成（成功/失败）后隐藏加载状态
           this.loading = false;
+          // 通过ref获取组件实例，调用清除方法
+          this.$refs.prettyTimes.clearSelected();
         });
     }
   },
