@@ -4,6 +4,9 @@ ChaoShen Mahjong Business App
 
 *Tip: 运行请先安装 `moment` & `underscore`*
 
+## 0.1.7.20251117
+* 尝试修复数据更新异常的问题  
+
 ## 0.1.6.20251113
 * 所有结束时间减去1分钟，显示xx:59  
 * 优化整体加载逻辑  
