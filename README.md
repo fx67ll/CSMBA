@@ -4,6 +4,9 @@ ChaoShen Mahjong Business App
 
 *Tip: 运行请先安装 `moment` & `underscore`*
 
+## 0.1.8.20260116
+* 使用超神麻将室管理端服务    
+
 ## 0.1.7.20251117
 * 尝试修复数据更新异常的问题  
 
