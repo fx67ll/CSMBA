@@ -45,7 +45,7 @@ module.exports = {
       },
       {
         title: '关于作者',
-        url: 'https://fx67ll.xyz/s/about',
+        url: 'https://fx67ll.xyz/s/about-me',
       },
     ],
   },
