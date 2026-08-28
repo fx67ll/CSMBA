@@ -39,7 +39,7 @@
     <view class="fx67ll-footer-container">
       <view class="fx67ll-footer">
         Designed & Powered by
-        <a href="https://nav.fx67ll.com" target="_blank">fx67ll</a>
+        <a href="https://fx67ll.com" target="_blank">fx67ll</a>
         Copyright© 2018- {{ nowYear }}
         <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">
           皖ICP备18017174号
